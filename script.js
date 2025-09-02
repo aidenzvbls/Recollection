@@ -8,9 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let sessionTimer = null;
     let editingCardId = null;
     let resettingDeckName = null;
-    // dark mode removed
+    let isDarkMode = localStorage.getItem('dark-mode') === 'true';
     let currentTags = [];
     let cardType = 'basic'; // 'basic' or 'cloze'
+    let statistics = JSON.parse(localStorage.getItem('flashcards-stats')) || {
+        totalStudied: 0,
+        streak: 0,
+        lastStudyDate: null,
+        dailyStats: {},
+        cardsMastered: 0
+    };
 
     // Fix for button interaction issues by using event delegation
     document.addEventListener('click', function(e) {
@@ -20,18 +27,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Check for specific buttons and trigger their handlers
         if (button.classList.contains('study-deck-btn')) {
-            const deckName = button.getAttribute('data-deck') || (button.closest('.deck-item') && button.closest('.deck-item').querySelector('.deck-name') ? button.closest('.deck-item').querySelector('.deck-name').textContent : null);
-            if (deckName) {
-                startStudySession(deckName);
-                // Single-page: scroll to study section
-                document.getElementById('study').scrollIntoView({ behavior: 'smooth' });
-            }
+            const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
+            startStudySession(deckName);
+            document.querySelector('[data-tab="study"]').click();
         } else if (button.classList.contains('reset-deck-btn')) {
-            const deckName = button.getAttribute('data-deck') || (button.closest('.deck-item') && button.closest('.deck-item').querySelector('.deck-name') ? button.closest('.deck-item').querySelector('.deck-name').textContent : null);
-            if (deckName) resetDeck(deckName);
+            const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
+            resetDeck(deckName);
         } else if (button.classList.contains('delete-deck-btn')) {
-            const deckName = button.getAttribute('data-deck') || (button.closest('.deck-item') && button.closest('.deck-item').querySelector('.deck-name') ? button.closest('.deck-item').querySelector('.deck-name').textContent : null);
-            if (deckName && confirm(`Are you sure you want to delete "${deckName}"? This cannot be undone.`)) {
+            const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
+            if (confirm(`Are you sure you want to delete "${deckName}"? This cannot be undone.`)) {
                 delete decks[deckName];
                 saveDecks();
                 renderDeckList();
@@ -40,11 +44,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // dark mode removed
+    // Set initial dark mode if needed
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-sun"></i>';
+    }
 
-    // tabs removed; single-page layout
+    // Initialize tabs
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-    // dark mode toggle removed
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-tab');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            // Special actions for specific tabs
+            if (tabId === 'decks') {
+                renderDeckList();
+            } else if (tabId === 'stats') {
+                updateStatistics();
+            }
+        });
+    });
+
+    // Dark mode toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle('dark-mode');
+        document.getElementById('theme-toggle').innerHTML = isDarkMode ?
+            '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('dark-mode', isDarkMode);
+    });
 
     // Card type toggle
     document.getElementById('basic-card-type').addEventListener('click', function() {
@@ -169,9 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update recent cards
         addToRecentCards(newCard, deckName);
-
-        // Refresh deck list so new/updated deck appears immediately
-        renderDeckList();
 
         // Show toast notification
         showToast('Success', `Card added to "${deckName}"`, 'success');
@@ -354,9 +387,124 @@ document.addEventListener('DOMContentLoaded', function() {
         resetDeckModal.classList.add('active');
     }
 
-    // Removed seeded example deck
+    // Add economics example deck if it doesn't exist
+    if (!decks['Economics 101']) {
+        decks['Economics 101'] = [
+            {
+                id: generateId(),
+                front: "What is opportunity cost?",
+                back: "The value of the next best alternative that must be given up in order to pursue a certain action. It represents the benefits you could have received by taking an alternative action.",
+                tags: ["microeconomics", "fundamental"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "Define GDP and explain its components.",
+                back: "Gross Domestic Product (GDP) is the total monetary value of all final goods and services produced within a country's borders in a specific time period.\n\nComponents:\n- Consumption (C): Household spending\n- Investment (I): Business spending on capital\n- Government Spending (G): Public expenditure\n- Net Exports (NX): Exports minus imports",
+                tags: ["macroeconomics", "measurement"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "What are the four factors of production?",
+                back: "1. Land: Natural resources\n2. Labor: Human effort and work\n3. Capital: Human-made tools and infrastructure\n4. Entrepreneurship: Organization, risk-taking, and innovation",
+                tags: ["microeconomics", "fundamental"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "Define elastic and inelastic demand with examples.",
+                back: "Elastic demand: When a small change in price leads to a large change in quantity demanded. Price elasticity > 1. Examples: luxury goods, products with many substitutes.\n\nInelastic demand: When a change in price has little effect on quantity demanded. Price elasticity < 1. Examples: necessities, goods with few substitutes (insulin, gasoline).",
+                tags: ["microeconomics", "elasticity"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "What is the difference between fiscal and monetary policy?",
+                back: "Fiscal Policy: Government's use of taxation and spending to influence the economy. Implemented by legislative and executive branches.\n\nMonetary Policy: Control of money supply and interest rates to influence the economy. Implemented by central banks (e.g., Federal Reserve).",
+                tags: ["macroeconomics", "policy"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "What is the Law of {{Diminishing Marginal Returns}}?",
+                back: "As more units of a variable input are added to fixed inputs, the marginal product of the variable input will eventually decrease. In other words, each additional unit of input yields less additional output than the previous unit.",
+                tags: ["microeconomics", "production"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'cloze'
+            },
+            {
+                id: generateId(),
+                front: "The difference between {{perfect competition}} and {{monopoly}} includes the number of sellers and pricing power.",
+                back: "Perfect Competition:\n- Many small firms\n- Identical products\n- Price takers\n- Free entry/exit\n- Perfect information\n\nMonopoly:\n- Single seller\n- Unique product with no close substitutes\n- Price maker\n- High barriers to entry\n- Profit maximizer (MR = MC)",
+                tags: ["microeconomics", "market structure"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'cloze'
+            },
+            {
+                id: generateId(),
+                front: "The four main causes of inflation are {{demand-pull}}, {{cost-push}}, {{built-in}}, and {{monetary}} inflation.",
+                back: "Main causes of inflation:\n\n1. Demand-Pull: Aggregate demand exceeds aggregate supply\n2. Cost-Push: Rising production costs push prices higher\n3. Built-In: Expectations of future inflation lead to higher wages and prices\n4. Monetary Inflation: Excessive growth in money supply relative to economic output",
+                tags: ["macroeconomics", "inflation"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'cloze'
+            },
+            {
+                id: generateId(),
+                front: "What is the Laffer Curve?",
+                back: "The Laffer Curve illustrates the relationship between tax rates and tax revenue collected by governments. It suggests that there is an optimal tax rate that maximizes revenue, beyond which higher rates actually reduce revenue due to decreased economic activity or increased tax avoidance.",
+                tags: ["macroeconomics", "taxation"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'basic'
+            },
+            {
+                id: generateId(),
+                front: "Define {{comparative advantage}} and {{absolute advantage}}.",
+                back: "Absolute Advantage: When a country or individual can produce more of a good with the same resources than another.\n\nComparative Advantage: When a country or individual can produce a good at a lower opportunity cost than another, even if they don't have an absolute advantage.",
+                tags: ["international", "trade"],
+                lastReviewed: null,
+                interval: 1,
+                ease: 2.5,
+                status: 'new',
+                type: 'cloze'
+            }
+        ];
+        saveDecks();
+    }
 
-    // Render simplified deck list
+    // Render deck list
     function renderDeckList() {
         const deckList = document.getElementById('deck-list');
         const noDecks = document.getElementById('no-decks');
@@ -368,30 +516,71 @@ document.addEventListener('DOMContentLoaded', function() {
             deckList.style.display = 'none';
             noDecks.style.display = 'block';
         } else {
-            deckList.style.display = 'block';
+            deckList.style.display = 'grid';
             noDecks.style.display = 'none';
 
-            deckNames.forEach((deckName) => {
+            // Color array for deck color tags
+            const colors = [
+                '#007AFF', // Blue
+                '#34C759', // Green
+                '#FF9500', // Orange
+                '#FF2D55', // Red
+                '#AF52DE', // Purple
+                '#5AC8FA', // Light Blue
+                '#FF3B30', // Red
+                '#FFCC00'  // Yellow
+            ];
+
+            deckNames.forEach((deckName, index) => {
                 const deckCards = decks[deckName];
                 const dueCount = getDueCardsCount(deckName);
 
+                // Get all unique tags in the deck
+                const deckTags = new Set();
+                deckCards.forEach(card => {
+                    if (card.tags) {
+                        card.tags.forEach(tag => deckTags.add(tag));
+                    }
+                });
+
+                // Get color based on index
+                const colorIndex = index % colors.length;
+                const deckColor = colors[colorIndex];
+
                 const deckElement = document.createElement('div');
-                deckElement.className = 'deck-item';
+                deckElement.className = 'deck-card';
                 deckElement.innerHTML = `
-                    <div class="deck-main">
-                        <div class="deck-name">${deckName}</div>
-                        <div class="deck-meta">${deckCards.length} cards • ${dueCount} due • ${getLastStudiedDate(deckName)}</div>
+                    <div class="deck-color-tag" style="background-color: ${deckColor};"></div>
+                    <div class="deck-header">
+                        <h3 class="deck-title">${deckName}</h3>
+                        <div>${getLastStudiedDate(deckName)}</div>
+                    </div>
+                    <div class="deck-stats">
+                        <div class="stat">
+                            <i class="fas fa-clone"></i>
+                            <span>${deckCards.length} cards</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>${dueCount} due</span>
+                        </div>
+                    </div>
+                    <div class="tag-list">
+                        ${Array.from(deckTags).slice(0, 3).map(tag => `<div class="tag">${tag}</div>`).join('')}
+                        ${deckTags.size > 3 ? `<div class="tag">+${deckTags.size - 3}</div>` : ''}
                     </div>
                     <div class="deck-actions">
-                        <button class="study-deck-btn" data-deck="${deckName}">
+                        <button class="study-deck-btn">
                             <i class="fas fa-book-open"></i> Study
                         </button>
-                        <button class="action-btn reset-deck-btn" data-deck="${deckName}" title="Reset Progress">
-                            <i class="fas fa-redo-alt"></i>
-                        </button>
-                        <button class="action-btn delete-deck-btn" data-deck="${deckName}" title="Delete Deck">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                        <div>
+                            <button class="action-btn reset-deck-btn" title="Reset Progress">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                            <button class="action-btn delete-deck-btn" title="Delete Deck">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
 
@@ -401,25 +590,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('create-first-deck').addEventListener('click', () => {
-        document.getElementById('create').scrollIntoView({ behavior: 'smooth' });
+        document.querySelector('[data-tab="create"]').click();
     });
 
     document.getElementById('show-deck-list').addEventListener('click', () => {
-        document.getElementById('decks').scrollIntoView({ behavior: 'smooth' });
+        document.querySelector('[data-tab="decks"]').click();
     });
 
-    // Filter UI removed
+    // Filter dropdown
+    document.getElementById('filter-btn').addEventListener('click', () => {
+        document.getElementById('filter-menu').classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        const filterMenu = document.getElementById('filter-menu');
+        const filterBtn = document.getElementById('filter-btn');
+
+        if (filterMenu.classList.contains('active') &&
+            !filterMenu.contains(e.target) &&
+            e.target !== filterBtn) {
+            filterMenu.classList.remove('active');
+        }
+    });
+
+    document.querySelectorAll('.filter-option').forEach(option => {
+        option.addEventListener('click', () => {
+            document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+            option.classList.add('active');
+            document.getElementById('filter-menu').classList.remove('active');
+            // Would implement actual filtering here
+        });
+    });
 
     // Deck search
     document.getElementById('deck-search').addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
 
-        document.querySelectorAll('.deck-item').forEach(item => {
-            const deckName = item.querySelector('.deck-name').textContent.toLowerCase();
-            if (deckName.includes(searchTerm)) {
-                item.style.display = '';
+        document.querySelectorAll('.deck-card').forEach(deck => {
+            const deckName = deck.querySelector('.deck-title').textContent.toLowerCase();
+            const tags = Array.from(deck.querySelectorAll('.tag')).map(tag => tag.textContent.toLowerCase());
+
+            if (deckName.includes(searchTerm) || tags.some(tag => tag.includes(searchTerm))) {
+                deck.style.display = '';
             } else {
-                item.style.display = 'none';
+                deck.style.display = 'none';
             }
         });
     });
@@ -465,7 +679,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show the first card
             showCurrentCard();
 
-            // statistics removed
+            // Update statistics
+            updateStudyStreak();
         } else {
             document.getElementById('study-card-container').style.display = 'none';
             document.getElementById('deck-selection').style.display = 'none';
@@ -634,7 +849,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div>Cards Reviewed: ${cardsToStudy.length}</div>
         `;
 
-        // statistics removed
+        // Update total cards studied count
+        statistics.totalStudied += cardsToStudy.length;
+        saveStatistics();
     }
 
     document.getElementById('restart-session').addEventListener('click', () => {
@@ -644,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('return-to-decks').addEventListener('click', () => {
-        document.getElementById('decks').scrollIntoView({ behavior: 'smooth' });
+        document.querySelector('[data-tab="decks"]').click();
     });
 
     // Process card rating and apply spaced repetition algorithm
@@ -697,7 +914,13 @@ document.addEventListener('DOMContentLoaded', function() {
         currentCardIndex++;
         showCurrentCard();
 
-        // statistics removed
+        // Update daily statistics
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        if (!statistics.dailyStats[today]) {
+            statistics.dailyStats[today] = { studied: 0, mastered: 0 };
+        }
+        statistics.dailyStats[today].studied++;
+        saveStatistics();
     }
 
     // Find the original card in the deck
@@ -713,7 +936,114 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    // statistics removed
+    // Update statistics
+    function updateStatistics() {
+        // Count total cards and decks
+        let totalCards = 0;
+        for (const deckName in decks) {
+            totalCards += decks[deckName].length;
+        }
+
+        document.getElementById('total-cards-stat').textContent = totalCards;
+        document.getElementById('total-decks-stat').textContent = Object.keys(decks).length;
+        document.getElementById('cards-studied-stat').textContent = getCardsStudiedToday();
+        document.getElementById('streak-stat').textContent = statistics.streak || 0;
+
+        // Update forecast data in the UI
+        updateForecast();
+    }
+
+    function updateForecast() {
+        const forecastData = [];
+        let totalDue = 0;
+        const now = new Date();
+
+        for (let day = 0; day < 7; day++) {
+            const d = new Date();
+            d.setDate(now.getDate() + day);
+            const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+            // Count cards due for each day
+            let dueThatDay = 0;
+            for (const deckName in decks) {
+                decks[deckName].forEach(card => {
+                    if (card.lastReviewed) {
+                        const lastReviewed = new Date(card.lastReviewed);
+                        const dueDate = new Date(lastReviewed);
+                        dueDate.setDate(dueDate.getDate() + card.interval);
+
+                        // Check if due on this specific day
+                        if (dueDate.toISOString().slice(0, 10) === d.toISOString().slice(0, 10)) {
+                            dueThatDay++;
+                        }
+                    } else if (day === 0) {
+                        // New cards are due today
+                        dueThatDay++;
+                    }
+                });
+            }
+
+            totalDue += dueThatDay;
+            forecastData.push({
+                date: dateStr,
+                due: dueThatDay
+            });
+        }
+
+        // Update the forecast in the UI
+        const forecastContainer = document.getElementById('forecast-container');
+        forecastContainer.innerHTML = `
+            <div style="padding: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="font-weight: 600;">Next 7 Days</div>
+                    <div style="color: var(--primary-color); font-weight: 600;">${totalDue} cards due</div>
+                </div>
+                ${forecastData.map(day => `
+                    <div class="forecast-day">
+                        <div class="forecast-date">${day.date}</div>
+                        <div class="forecast-count">${day.due}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function updateStudyStreak() {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+        if (!statistics.lastStudyDate || statistics.lastStudyDate !== today) {
+            // Check if the last study was yesterday
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+            if (statistics.lastStudyDate === yesterdayStr) {
+                // Increment streak if last study was yesterday
+                statistics.streak = (statistics.streak || 0) + 1;
+            } else if (!statistics.lastStudyDate || statistics.lastStudyDate !== today) {
+                // Reset streak if not consecutive
+                statistics.streak = 1;
+            }
+
+            statistics.lastStudyDate = today;
+            saveStatistics();
+        }
+    }
+
+    function getCardsStudiedToday() {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+        let count = 0;
+        for (const deckName in decks) {
+            decks[deckName].forEach(card => {
+                if (card.lastReviewed && card.lastReviewed.startsWith(today)) {
+                    count++;
+                }
+            });
+        }
+
+        return count;
+    }
 
     // Import/Export functions
     document.getElementById('export-deck').addEventListener('click', () => {
@@ -803,8 +1133,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        // Only process if study card is visible
-        if (document.getElementById('study-card-container').style.display === 'none') {
+        // Only process if we're in study mode
+        if (!document.getElementById('study').classList.contains('active') ||
+            document.getElementById('study-card-container').style.display === 'none') {
             return;
         }
 

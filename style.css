@@ -18,7 +18,14 @@
     --border-color: #D2D2D7;
     --subtle-color: #F2F2F7;
 
-    /* Dark mode removed */
+    /* Dark mode colors - refined */
+    --dark-background: #000000;
+    --dark-card: #1C1C1E;
+    --dark-elevated: #2C2C2E;
+    --dark-text: #F5F5F7;
+    --dark-text-secondary: #98989D;
+    --dark-border: #38383A;
+    --dark-subtle: #242426;
 
     /* UI elements - refined for Apple aesthetic */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.03);
@@ -36,7 +43,15 @@
     --spring-transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* dark mode removed */
+.dark-mode {
+    --background-color: var(--dark-background);
+    --card-color: var(--dark-card);
+    --text-color: var(--dark-text);
+    --text-secondary: var(--dark-text-secondary);
+    --border-color: var(--dark-border);
+    --subtle-color: var(--dark-subtle);
+    background-image: linear-gradient(180deg, var(--dark-background) 0%, var(--dark-background) 85%, rgba(40, 40, 45, 0.3) 100%);
+}
 
 * {
     box-sizing: border-box;
@@ -131,30 +146,99 @@ header {
     gap: 16px;
 }
 
-/* theme toggle removed */
+.dark-mode-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--text-color);
+    padding: 8px;
+    border-radius: 50%;
+    transition: var(--transition);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-/* theme toggle removed */
+.dark-mode-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+}
 
-/* dark mode removed */
+.dark-mode .dark-mode-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
 
-/* tabs removed */
+.tab-container {
+    display: flex;
+    background-color: var(--subtle-color);
+    border-radius: var(--radius-xl);
+    padding: 5px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 16px;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+}
 
-/* dark mode removed */
+.dark-mode .tab-container {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-/* tabs removed */
+.tab {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: var(--radius-lg);
+    transition: var(--spring-transition);
+    flex: 1;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    margin: 0 2px;
+    box-shadow: none;
+}
 
-/* tabs removed */
+.tab i {
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
 
-/* tabs removed */
+.tab:hover {
+    color: var(--primary-color);
+    background-color: rgba(0, 122, 255, 0.05);
+}
 
-/* tabs removed */
+.tab::after {
+    display: none;
+}
 
-/* tabs removed */
+.tab.active {
+    background-color: var(--card-color);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+    transform: scale(1.02);
+}
 
-/* tabs removed */
+.tab.active i {
+    transform: scale(1.1);
+}
 
 .tab-content {
-    display: block;
+    display: none;
     background-color: var(--card-color);
     border-radius: var(--radius-lg);
     padding: 32px;
@@ -167,14 +251,18 @@ header {
     -webkit-backdrop-filter: blur(5px);
 }
 
-/* dark mode removed */
+.dark-mode .tab-content {
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px) scale(0.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* tabs removed */
+.tab-content.active {
+    display: block;
+}
 
 h2 {
     color: var(--text-color);
@@ -379,54 +467,88 @@ button.sm {
 }
 
 .deck-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
     margin-top: 24px;
 }
 
-.deck-item {
+.deck-card {
     background-color: var(--card-color);
-    border-radius: var(--radius-md);
-    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    padding: 24px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid var(--border-color);
+    flex-direction: column;
+    gap: 16px;
+    transition: var(--spring-transition);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transform-origin: center;
 }
 
 .dark-mode .deck-card {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.deck-item:hover {
+.deck-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
     border-color: rgba(0, 122, 255, 0.3);
-    box-shadow: var(--shadow-sm);
+    z-index: 1;
 }
 
-/* remove decorative gradient */
+.deck-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.07),
+        rgba(255, 255, 255, 0));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    pointer-events: none;
+}
 
-/* removed color tag */
+.deck-color-tag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
 
-.deck-main {
+.deck-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
-.deck-name {
-    font-size: 16px;
+.deck-title {
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-color);
     margin: 0;
 }
 
-.deck-meta {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 4px;
+.deck-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
 }
 
-/* removed stat rows */
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
 
 .stat i {
     color: var(--primary-color);
@@ -434,7 +556,12 @@ button.sm {
     text-align: center;
 }
 
-/* removed tag list from deck item */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
 
 .tag {
     background-color: rgba(0, 122, 255, 0.1);
