@@ -4,13 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStudyingDeck = null;
     let cardsToStudy = [];
     let currentCardIndex = 0;
-    let studySessionStartTime = null;
-    let sessionTimer = null;
     let editingCardId = null;
     let resettingDeckName = null;
-    let isDarkMode = localStorage.getItem('dark-mode') === 'true';
+    let editingDeckName = null;
     let currentTags = [];
     let cardType = 'basic'; // 'basic' or 'cloze'
+    let isEditingDeck = false;
+    let againCards = []; // Cards that were rated "again" to replay at end
     let statistics = JSON.parse(localStorage.getItem('flashcards-stats')) || {
         totalStudied: 0,
         streak: 0,
@@ -30,12 +30,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
             startStudySession(deckName);
             document.querySelector('[data-tab="study"]').click();
+        } else if (button.classList.contains('study-again-btn')) {
+            const deckName = button.getAttribute('data-deck');
+            startStudySession(deckName, 'again');
+            document.querySelector('[data-tab="study"]').click();
+        } else if (button.classList.contains('study-hard-btn')) {
+            const deckName = button.getAttribute('data-deck');
+            startStudySession(deckName, 'hard');
+            document.querySelector('[data-tab="study"]').click();
+        } else if (button.classList.contains('edit-deck-btn')) {
+            const deckName = button.getAttribute('data-deck');
+            editDeck(deckName);
+        } else if (button.classList.contains('export-deck-btn')) {
+            const deckName = button.getAttribute('data-deck');
+            exportDeck(deckName);
         } else if (button.classList.contains('reset-deck-btn')) {
             const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
             resetDeck(deckName);
         } else if (button.classList.contains('delete-deck-btn')) {
             const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
-            if (confirm(`Are you sure you want to delete "${deckName}"? This cannot be undone.`)) {
+            const cardCount = decks[deckName] ? decks[deckName].length : 0;
+            if (confirm(`Are you sure you want to delete "${deckName}" with ${cardCount} cards?\n\nThis action cannot be undone.`)) {
                 delete decks[deckName];
                 saveDecks();
                 renderDeckList();
@@ -43,12 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    // Set initial dark mode if needed
-    if (isDarkMode) {
-        document.body.classList.add('dark-mode');
-        document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-sun"></i>';
-    }
 
     // Initialize tabs
     const tabs = document.querySelectorAll('.tab');
@@ -67,44 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Special actions for specific tabs
             if (tabId === 'decks') {
                 renderDeckList();
-            } else if (tabId === 'stats') {
                 updateStatistics();
             }
         });
     });
 
-    // Dark mode toggle
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-        isDarkMode = !isDarkMode;
-        document.body.classList.toggle('dark-mode');
-        document.getElementById('theme-toggle').innerHTML = isDarkMode ?
-            '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-        localStorage.setItem('dark-mode', isDarkMode);
-    });
-
-    // Card type toggle
-    document.getElementById('basic-card-type').addEventListener('click', function() {
-        setCardType('basic');
-    });
-
-    document.getElementById('cloze-card-type').addEventListener('click', function() {
-        setCardType('cloze');
-    });
-
-    function setCardType(type) {
-        cardType = type;
-        document.getElementById('basic-card-type').classList.toggle('active', type === 'basic');
-        document.getElementById('cloze-card-type').classList.toggle('active', type === 'cloze');
-
-        // Update placeholder text based on card type
-        if (type === 'basic') {
-            document.getElementById('card-front').placeholder = 'Enter your question or prompt';
-            document.getElementById('card-back').placeholder = 'Enter the answer or explanation';
-        } else {
-            document.getElementById('card-front').placeholder = 'Enter text with cloze deletions using {{...}} (e.g., The capital of France is {{Paris}})';
-            document.getElementById('card-back').placeholder = 'Enter additional information (optional)';
-        }
-    }
+    // Set default card type to basic since we removed the toggle
+    cardType = 'basic';
 
     // Tags input functionality
     const tagInput = document.getElementById('tag-input');
@@ -171,13 +149,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Process cloze deletion cards
-        if (cardType === 'cloze') {
-            // Validate cloze format
-            if (!front.includes('{{') || !front.includes('}}')) {
-                showToast('Error', 'Cloze cards must include text in {{...}} format', 'error');
-                return;
+        if (!deckName) {
+            showToast('Error', 'Deck name cannot be empty', 'error');
+            return;
+        }
+
+        // If editing mode and deck name changed, check if new name exists
+        if (isEditingDeck && editingDeckName !== deckName && decks[deckName]) {
+            showToast('Error', 'A deck with that name already exists', 'error');
+            return;
+        }
+
+        // Handle deck renaming in edit mode
+        if (isEditingDeck && editingDeckName !== deckName) {
+            if (decks[editingDeckName]) {
+                decks[deckName] = decks[editingDeckName];
+                delete decks[editingDeckName];
             }
+            editingDeckName = deckName;
         }
 
         // Create deck if it doesn't exist
@@ -185,7 +174,14 @@ document.addEventListener('DOMContentLoaded', function() {
             decks[deckName] = [];
         }
 
-        // Add card to deck
+        // Update all existing cards with new tags if in edit mode
+        if (isEditingDeck) {
+            decks[deckName].forEach(card => {
+                card.tags = [...currentTags];
+            });
+        }
+
+        // Add new card to deck
         const newCard = {
             id: generateId(),
             front: front,
@@ -203,9 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save to localStorage
         saveDecks();
 
-        // Update recent cards
-        addToRecentCards(newCard, deckName);
-
         // Show toast notification
         showToast('Success', `Card added to "${deckName}"`, 'success');
 
@@ -213,6 +206,11 @@ document.addEventListener('DOMContentLoaded', function() {
         cardFrontInput.value = '';
         cardBackInput.value = '';
         cardFrontInput.focus();
+
+        // Update deck list if visible
+        if (document.getElementById('decks').classList.contains('active')) {
+            renderDeckList();
+        }
     });
 
     // Clear form
@@ -221,47 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
         cardFrontInput.value = '';
         cardBackInput.value = '';
         clearTags();
-        setCardType('basic');
+        cardFrontInput.focus();
     });
 
-    // Function to add card to recent cards list
-    function addToRecentCards(card, deckName) {
-        const recentCardsList = document.getElementById('recent-cards');
-        const cardElement = document.createElement('div');
-        cardElement.className = 'card-list-item';
-        cardElement.setAttribute('data-id', card.id);
 
-        // Handle cloze cards display in recent list
-        let frontDisplay = card.front;
-        if (card.type === 'cloze') {
-            frontDisplay = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">$1</span>');
-        }
-
-        cardElement.innerHTML = `
-            <div class="card-question">${frontDisplay}</div>
-            <div class="card-answer">${card.back}</div>
-        `;
-
-        cardElement.addEventListener('click', () => {
-            // Show edit modal for this card
-            editingCardId = card.id;
-            document.getElementById('edit-card-front').value = card.front;
-            document.getElementById('edit-card-back').value = card.back;
-            document.getElementById('edit-card-modal').classList.add('active');
-        });
-
-        // Add at the beginning (most recent first)
-        if (recentCardsList.firstChild) {
-            recentCardsList.insertBefore(cardElement, recentCardsList.firstChild);
-        } else {
-            recentCardsList.appendChild(cardElement);
-        }
-
-        // Keep only the last 10 recent cards
-        while (recentCardsList.children.length > 10) {
-            recentCardsList.removeChild(recentCardsList.lastChild);
-        }
-    }
 
     // Edit card modal
     const editCardModal = document.getElementById('edit-card-modal');
@@ -313,9 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         showToast('Success', 'Card updated successfully', 'success');
                         editCardModal.classList.remove('active');
 
-                        // Update the card in recent cards list if it exists
-                        updateRecentCardDisplay(editingCardId, newFront, newBack);
-
                         // If studying, update current card display if needed
                         if (currentStudyingDeck && currentCardIndex < cardsToStudy.length) {
                             const currentCard = cardsToStudy[currentCardIndex];
@@ -331,24 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function updateRecentCardDisplay(cardId, newFront, newBack) {
-        const recentCards = document.querySelectorAll('.card-list-item');
-        for (let i = 0; i < recentCards.length; i++) {
-            const card = recentCards[i];
-            if (card.getAttribute('data-id') === cardId) {
-                let frontDisplay = newFront;
 
-                // Check if it's a cloze card
-                if (newFront.includes('{{') && newFront.includes('}}')) {
-                    frontDisplay = newFront.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">$1</span>');
-                }
-
-                card.querySelector('.card-question').innerHTML = frontDisplay;
-                card.querySelector('.card-answer').textContent = newBack;
-                break;
-            }
-        }
-    }
 
     // Reset deck functionality
     const resetDeckModal = document.getElementById('reset-deck-modal');
@@ -534,6 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
             deckNames.forEach((deckName, index) => {
                 const deckCards = decks[deckName];
                 const dueCount = getDueCardsCount(deckName);
+                const performanceCounts = getPerformanceCounts(deckName);
 
                 // Get all unique tags in the deck
                 const deckTags = new Set();
@@ -570,10 +512,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${deckTags.size > 3 ? `<div class="tag">+${deckTags.size - 3}</div>` : ''}
                     </div>
                     <div class="deck-actions">
-                        <button class="study-deck-btn">
-                            <i class="fas fa-book-open"></i> Study
-                        </button>
-                        <div>
+                        <div class="study-options">
+                            <button class="study-deck-btn">
+                                <i class="fas fa-book-open"></i> Study All
+                            </button>
+                            ${performanceCounts.again > 0 ? `<button class="study-again-btn btn-small danger" data-deck="${deckName}">Again (${performanceCounts.again})</button>` : ''}
+                            ${performanceCounts.hard > 0 ? `<button class="study-hard-btn btn-small warning" data-deck="${deckName}">Hard (${performanceCounts.hard})</button>` : ''}
+                        </div>
+                        <div class="deck-controls">
+                            <button class="action-btn edit-deck-btn" title="Edit Deck" data-deck="${deckName}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn export-deck-btn" title="Export Deck" data-deck="${deckName}">
+                                <i class="fas fa-file-export"></i>
+                            </button>
                             <button class="action-btn reset-deck-btn" title="Reset Progress">
                                 <i class="fas fa-redo-alt"></i>
                             </button>
@@ -590,7 +542,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('create-first-deck').addEventListener('click', () => {
-        document.querySelector('[data-tab="create"]').click();
+        openCreateDeckModal(false);
+    });
+
+    document.getElementById('create-new-deck').addEventListener('click', () => {
+        openCreateDeckModal(false);
     });
 
     document.getElementById('show-deck-list').addEventListener('click', () => {
@@ -639,17 +595,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Study session
-    function startStudySession(deckName) {
+    function startStudySession(deckName, performanceFilter = null) {
         if (!decks[deckName] || decks[deckName].length === 0) {
             showToast('Error', `No cards in deck "${deckName}"`, 'error');
             return;
         }
 
         currentStudyingDeck = deckName;
-        document.getElementById('study-deck-name').textContent = deckName;
+        const deckTitle = performanceFilter ? 
+            `${deckName} - ${performanceFilter.charAt(0).toUpperCase() + performanceFilter.slice(1)} Cards` : 
+            deckName;
+        document.getElementById('study-deck-name').textContent = deckTitle;
 
-        // Get due cards using the SM-2 algorithm
-        cardsToStudy = getDueCards(deckName);
+        // Get cards based on filter
+        if (performanceFilter) {
+            cardsToStudy = decks[deckName].filter(card => card.lastPerformance === performanceFilter);
+        } else {
+            // Get due cards using the SM-2 algorithm
+            cardsToStudy = getDueCards(deckName);
+        }
+
+        // Reset again cards for new session
+        againCards = [];
 
         // Update study UI
         document.getElementById('total-count').textContent = cardsToStudy.length;
@@ -665,17 +632,6 @@ document.addEventListener('DOMContentLoaded', function() {
             cardsToStudy = shuffleArray(cardsToStudy);
             currentCardIndex = 0;
 
-            // Start session timer
-            studySessionStartTime = new Date();
-            if (sessionTimer) clearInterval(sessionTimer);
-            // Assuming there's an element with id 'session-time' in the HTML
-            const sessionTimeElement = document.getElementById('session-time');
-            if (sessionTimeElement) {
-                 sessionTimer = setInterval(updateSessionTime, 1000);
-            } else {
-                console.warn('Element with ID "session-time" not found. Session timer will not be displayed.');
-            }
-
             // Show the first card
             showCurrentCard();
 
@@ -689,20 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function updateSessionTime() {
-        if (!studySessionStartTime) return;
 
-        const now = new Date();
-        const elapsedMs = now - studySessionStartTime;
-        const minutes = Math.floor(elapsedMs / 60000);
-        const seconds = Math.floor((elapsedMs % 60000) / 1000);
-
-        const sessionTimeElement = document.getElementById('session-time');
-        if (sessionTimeElement) {
-            sessionTimeElement.textContent =
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-    }
 
     function getDueCards(deckName) {
         const now = new Date();
@@ -753,10 +696,31 @@ document.addEventListener('DOMContentLoaded', function() {
         return `Studied ${diffDays} days ago`;
     }
 
+    function getPerformanceCounts(deckName) {
+        if (!decks[deckName]) return { again: 0, hard: 0 };
+        
+        let againCount = 0;
+        let hardCount = 0;
+        
+        decks[deckName].forEach(card => {
+            if (card.lastPerformance === 'again') againCount++;
+            else if (card.lastPerformance === 'hard') hardCount++;
+        });
+        
+        return { again: againCount, hard: hardCount };
+    }
+
     function showCurrentCard() {
         if (cardsToStudy.length === 0 || currentCardIndex >= cardsToStudy.length) {
-            completeStudySession();
-            return;
+            // If we have "again" cards to replay, add them to the end
+            if (againCards.length > 0) {
+                cardsToStudy = [...cardsToStudy, ...againCards];
+                againCards = []; // Clear the again cards
+                // Don't increment total count, just continue
+            } else {
+                completeStudySession();
+                return;
+            }
         }
 
         const card = cardsToStudy[currentCardIndex];
@@ -827,25 +791,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Session completion
     function completeStudySession() {
-        // Stop the timer
-        if (sessionTimer) {
-            clearInterval(sessionTimer);
-            sessionTimer = null;
-        }
-
         // Update UI
         document.getElementById('study-card-container').style.display = 'none';
         document.getElementById('deck-selection').style.display = 'none';
         document.getElementById('session-complete').style.display = 'block';
 
-        // Calculate session stats
-        const sessionDuration = new Date() - studySessionStartTime;
-        const minutes = Math.floor(sessionDuration / 60000);
-        const seconds = Math.floor((sessionDuration % 60000) / 1000);
-        const timeStr = `${minutes}m ${seconds}s`;
-
         document.getElementById('session-summary').innerHTML = `
-            <div>Session Time: ${timeStr}</div>
             <div>Cards Reviewed: ${cardsToStudy.length}</div>
         `;
 
@@ -856,6 +807,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('restart-session').addEventListener('click', () => {
         if (currentStudyingDeck) {
+            // Reset all cards in the deck to make them available for study again
+            if (decks[currentStudyingDeck]) {
+                decks[currentStudyingDeck].forEach(card => {
+                    card.lastReviewed = null;
+                    card.interval = 1;
+                    card.status = 'new';
+                    card.lastPerformance = null;
+                });
+                saveDecks();
+            }
             startStudySession(currentStudyingDeck);
         }
     });
@@ -873,8 +834,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!originalCard) return;
 
-        // Update last reviewed time
+        // Update last reviewed time and performance
         originalCard.lastReviewed = new Date().toISOString();
+        originalCard.lastPerformance = difficulty;
+
+        // If rated "again", add to again cards for replay
+        if (difficulty === 'again') {
+            againCards.push({...originalCard});
+        }
 
         // Apply SM-2 algorithm
         switch (difficulty) {
@@ -947,7 +914,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-cards-stat').textContent = totalCards;
         document.getElementById('total-decks-stat').textContent = Object.keys(decks).length;
         document.getElementById('cards-studied-stat').textContent = getCardsStudiedToday();
-        document.getElementById('streak-stat').textContent = statistics.streak || 0;
 
         // Update forecast data in the UI
         updateForecast();
@@ -1045,10 +1011,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return count;
     }
 
-    // Import/Export functions
-    document.getElementById('export-deck').addEventListener('click', () => {
-        const deckName = document.getElementById('deck-name').value.trim() || 'Default Deck';
-
+    // Export function for individual decks
+    function exportDeck(deckName) {
         if (!decks[deckName] || decks[deckName].length === 0) {
             showToast('Error', `No cards in "${deckName}" to export`, 'error');
             return;
@@ -1070,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function() {
         linkElement.click();
 
         showToast('Success', `Exported deck "${deckName}" successfully`, 'success');
-    });
+    }
 
     document.getElementById('import-deck').addEventListener('click', () => {
         document.getElementById('import-file').click();
@@ -1239,6 +1203,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return newArray;
     }
+
+    // Open create/edit deck modal
+    function openCreateDeckModal(editing, deckName = '') {
+        isEditingDeck = editing;
+        editingDeckName = editing ? deckName : null;
+        
+        // Update modal title
+        const title = document.getElementById('create-deck-title');
+        if (editing) {
+            title.innerHTML = '<i class="fas fa-edit"></i> Edit Deck';
+        } else {
+            title.innerHTML = '<i class="fas fa-plus"></i> Create New Deck';
+        }
+        
+        // Clear form
+        document.getElementById('deck-name').value = editing ? deckName : '';
+        document.getElementById('card-front').value = '';
+        document.getElementById('card-back').value = '';
+        clearTags();
+        
+        if (editing && decks[deckName]) {
+            // Get unique tags from deck
+            const uniqueTags = new Set();
+            decks[deckName].forEach(card => {
+                if (card.tags) {
+                    card.tags.forEach(tag => uniqueTags.add(tag));
+                }
+            });
+            
+            // Add tags to modal
+            uniqueTags.forEach(tag => {
+                addTag(tag);
+            });
+        }
+        
+        document.getElementById('create-deck-modal').classList.add('active');
+        document.getElementById('deck-name').focus();
+    }
+
+    // Edit deck functionality
+    function editDeck(deckName) {
+        openCreateDeckModal(true, deckName);
+    }
+
+    // Create/Edit deck modal handlers
+    document.getElementById('close-create-deck-modal').addEventListener('click', () => {
+        document.getElementById('create-deck-modal').classList.remove('active');
+    });
 
     // Initialize UI
     renderDeckList();
