@@ -94,66 +94,33 @@ header {
 
 
 
-.tab-container {
-    display: flex;
-    background-color: var(--subtle-color);
-    border-radius: var(--radius);
-    padding: 4px;
-    margin-bottom: 24px;
-    border: 1px solid var(--border-color);
-}
 
 
 
-.tab {
-    padding: 12px 16px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    border-radius: var(--radius);
-    transition: var(--transition);
-    flex: 1;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.tab i {
-    font-size: 16px;
-}
-
-.tab:hover {
-    color: var(--primary-color);
-    background-color: rgba(37, 99, 235, 0.1);
-}
 
 
 
-.tab.active {
-    background-color: var(--primary-color);
-    color: white;
-    font-weight: 600;
-}
 
 
 
-.tab-content {
-    display: none;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.main-content {
     padding: 24px 0;
     margin-bottom: 24px;
-}
-
-
-
-
-
-.tab-content.active {
-    display: block;
 }
 
 h2 {
@@ -363,6 +330,7 @@ button.sm {
     gap: 12px;
     border: 1px solid var(--border-color);
     transition: var(--transition);
+    position: relative;
 }
 
 
@@ -551,6 +519,13 @@ button.sm {
     gap: 16px;
     margin-top: 32px;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.rating-buttons-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .keyboard-shortcuts {
@@ -684,78 +659,7 @@ button.sm {
     gap: 8px;
 }
 
-.search-bar {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-    align-items: stretch;
-}
 
-.search-input {
-    flex: 1;
-    position: relative;
-}
-
-.search-input input {
-    padding-left: 44px;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    font-size: 16px;
-}
-
-.filter-dropdown {
-    position: relative;
-    display: flex;
-}
-
-.filter-dropdown button {
-    height: 52px;
-    display: flex;
-    align-items: center;
-}
-
-.filter-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
-    background-color: var(--card-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    padding: 8px;
-    min-width: 200px;
-    z-index: 100;
-    display: none;
-    border: 1px solid var(--border-color);
-}
-
-.filter-menu.active {
-    display: block;
-    animation: fadeIn 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.filter-option {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: var(--transition);
-    font-size: 14px;
-}
-
-.filter-option:hover {
-    background-color: rgba(37, 99, 235, 0.1);
-}
-
-.filter-option.active {
-    background-color: var(--primary-color);
-    color: white;
-}
 
 .progress-bar {
     width: 100%;
@@ -818,7 +722,276 @@ button.sm {
 }
 
 .large-modal {
-    max-width: 700px;
+    max-width: 900px;
+}
+
+/* Study Page */
+.study-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-color);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.study-overlay.active {
+    display: flex;
+}
+
+/* Hide main content when in study mode */
+body.study-mode header,
+body.study-mode #decks {
+    display: none !important;
+}
+
+/* Hide most modals in study mode, but allow edit card modal */
+body.study-mode .modal:not(#edit-card-modal) {
+    display: none !important;
+}
+
+/* Ensure edit modal appears above study overlay */
+#edit-card-modal {
+    z-index: 1100;
+}
+
+.study-overlay .main-content {
+    flex: 1;
+    padding: 40px 20px 20px 20px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 80px);
+}
+
+.study-header {
+    background: var(--card-color);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn:hover {
+    background: var(--border-color);
+}
+
+.study-header h2 {
+    margin: 0;
+    flex: 1;
+}
+
+.study-header .study-progress-info {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Deck Editor */
+.deck-editor {
+    display: flex;
+    gap: 2rem;
+    height: 70vh;
+    overflow: hidden;
+}
+
+.editor-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.editor-sidebar {
+    width: 300px;
+    border-left: 1px solid var(--border-color);
+    padding-left: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.cards-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-item {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 12px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.card-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.card-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.card-item.drag-over {
+    border-color: var(--primary-color);
+    border-style: dashed;
+}
+
+.card-preview {
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.card-front-preview {
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-back-preview {
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.card-action-btn {
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.card-action-btn:hover {
+    background: var(--border-color);
+}
+
+.card-action-btn.edit {
+    color: var(--primary-color);
+}
+
+.card-action-btn.delete {
+    color: #ef4444;
+}
+
+.drag-handle {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    cursor: grab;
+    font-size: 12px;
+}
+
+.card-item:hover .drag-handle {
+    color: var(--text-color);
+}
+
+/* Card Preview */
+.card-preview {
+    margin: 20px 0;
+    padding: 16px;
+    background-color: var(--subtle-color);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+.card-preview h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preview-card {
+    display: flex;
+    gap: 16px;
+}
+
+.preview-front,
+.preview-back {
+    flex: 1;
+    background: var(--card-color);
+    border-radius: var(--radius);
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.preview-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#preview-front-content,
+#preview-back-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-color);
+    min-height: 40px;
+    word-wrap: break-word;
+}
+
+@media (max-width: 600px) {
+    .preview-card {
+        flex-direction: column;
+    }
 }
 
 
@@ -857,7 +1030,7 @@ button.sm {
 
 .modal-close:hover {
     background-color: rgba(0, 0, 0, 0.1);
-    color: var(--danger-color);
+    color: var(--accent-color);
 }
 
 .modal-body {
@@ -964,6 +1137,21 @@ button.sm {
 
 .forecast-section h3 {
     margin-bottom: 12px;
+}
+
+.due-cards-summary {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    padding: 12px 16px;
+    background-color: var(--subtle-color);
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.due-cards-summary span {
+    font-weight: 600;
+    color: var(--primary-color);
 }
 
 .import-export-section {
@@ -1096,15 +1284,7 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .tab-container {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
 
-    .tab {
-        flex: auto;
-        min-width: calc(50% - 6px);
-    }
 
     .row {
         flex-direction: column;

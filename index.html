@@ -21,14 +21,7 @@
 
         </header>
 
-        <div class="tab-container">
-            <button class="tab active" data-tab="decks">
-                <i class="fas fa-layer-group"></i> My Decks
-            </button>
-            <button class="tab" data-tab="study">
-                <i class="fas fa-book-open"></i> Study
-            </button>
-        </div>
+
 
         <!-- Create/Edit Deck Modal -->
         <div id="create-deck-modal" class="modal">
@@ -40,47 +33,77 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col form-group">
-                            <label for="deck-name">Deck Name</label>
-                            <div class="input-wrapper">
-                                <input type="text" id="deck-name" class="input" placeholder="Enter deck name">
+                    <div class="deck-editor">
+                        <div class="editor-main">
+                            <div class="row">
+                                <div class="col form-group">
+                                    <label for="deck-name">Deck Name</label>
+                                    <div class="input-wrapper">
+                                        <input type="text" id="deck-name" class="input" placeholder="Enter deck name">
+                                    </div>
+                                </div>
+                                <div class="col form-group">
+                                    <label for="deck-tags">Tags</label>
+                                    <div class="tags-input" id="tags-container">
+                                        <input type="text" id="tag-input" placeholder="Add tags">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="card-front">Front</label>
+                                <textarea id="card-front" placeholder="Enter your question or prompt"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="card-back">Back</label>
+                                <textarea id="card-back" placeholder="Enter the answer or explanation"></textarea>
+                            </div>
+                            
+                            <div class="card-preview" id="card-preview" style="display: none;">
+                                <h4><i class="fas fa-eye"></i> Preview</h4>
+                                <div class="preview-card">
+                                    <div class="preview-front">
+                                        <div class="preview-label">Front:</div>
+                                        <div id="preview-front-content">Enter text to see preview</div>
+                                    </div>
+                                    <div class="preview-back">
+                                        <div class="preview-label">Back:</div>
+                                        <div id="preview-back-content">Enter text to see preview</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button id="add-card">
+                                    <i class="fas fa-plus"></i> Add Card
+                                </button>
+                                <button id="clear-form" class="secondary">
+                                    <i class="fas fa-eraser"></i> Clear Form
+                                </button>
                             </div>
                         </div>
-                        <div class="col form-group">
-                            <label for="deck-tags">Tags</label>
-                            <div class="tags-input" id="tags-container">
-                                <input type="text" id="tag-input" placeholder="Add tags">
+                        
+                        <div class="editor-sidebar" id="cards-sidebar" style="display: none;">
+                            <div class="sidebar-header">
+                                <h4><i class="fas fa-list"></i> Existing Cards (<span id="card-count">0</span>)</h4>
+                            </div>
+                            <div class="cards-list" id="existing-cards-list">
+                                <!-- Cards will be populated here -->
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="card-front">Front</label>
-                        <textarea id="card-front" placeholder="Enter your question or prompt"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="card-back">Back</label>
-                        <textarea id="card-back" placeholder="Enter the answer or explanation"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button id="add-card">
-                            <i class="fas fa-plus"></i> Add Card
-                        </button>
-                        <button id="clear-form" class="secondary">
-                            <i class="fas fa-eraser"></i> Clear Form
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="decks" class="tab-content active">
+        <div id="decks" class="main-content">
             <div class="decks-header">
                 <h2><i class="fas fa-layer-group"></i> My Decks</h2>
                 <div class="header-actions">
+                    <button id="resume-session" class="btn-small" style="background: #22c55e; color: white; display: none;">
+                        <i class="fas fa-play"></i> Resume Study
+                    </button>
                     <button id="create-new-deck" class="btn-small">
                         <i class="fas fa-plus"></i> Create New Deck
                     </button>
@@ -90,24 +113,6 @@
                 </div>
             </div>
             <input type="file" id="import-file" style="display: none;">
-            
-            <div class="search-bar">
-                <div class="search-input">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="deck-search" class="input" placeholder="Search decks...">
-                </div>
-                <div class="filter-dropdown">
-                    <button id="filter-btn" class="secondary">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                    <div class="filter-menu" id="filter-menu">
-                        <div class="filter-option active">All Decks</div>
-                        <div class="filter-option">Recently Studied</div>
-                        <div class="filter-option">Most Cards</div>
-                        <div class="filter-option">Due Cards</div>
-                    </div>
-                </div>
-            </div>
             
             <div id="deck-list" class="deck-list">
                 <!-- Decks will be inserted here -->
@@ -150,24 +155,30 @@
                 </div>
                 
                 <div class="forecast-section">
-                    <h3><i class="fas fa-calendar-alt"></i> Upcoming Reviews</h3>
-                    <div id="forecast-container" class="chart-container">
-                        <!-- Forecast data will be inserted here dynamically -->
+                    <h3><i class="fas fa-calendar-alt"></i> Due Cards</h3>
+                    <div class="due-cards-summary">
+                        <span id="due-today">0</span> due today • <span id="due-tomorrow">0</span> due tomorrow
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="study" class="tab-content">
-            <div id="study-header">
-                <h2 id="study-deck-name">Select a deck to study</h2>
-                <div class="progress-bar">
-                    <div id="study-progress" class="progress-fill" style="width: 0%"></div>
-                </div>
+        <!-- Study Page -->
+        <div id="study-overlay" class="study-overlay">
+            <div class="study-header">
+                <button id="back-to-decks" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Decks
+                </button>
+                <h2 id="study-deck-name">Studying Deck</h2>
                 <div class="study-progress-info">
                     <span id="remaining-count">0</span> remaining of <span id="total-count">0</span> cards
                 </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="study-progress"></div>
+                </div>
             </div>
+            
+            <div class="main-content">
             
             <div id="study-card-container" class="study-card-container" style="display: none;">
                 <div class="flashcard" id="flashcard">
@@ -196,18 +207,23 @@
                 </div>
                 
                 <div class="study-controls" id="rating-controls" style="display: none;">
-                    <button class="danger" data-difficulty="again">
-                        <i class="fas fa-redo"></i> Again (1)
+                    <button id="restart-current-session" class="secondary" title="Restart Session">
+                        <i class="fas fa-redo-alt"></i> Restart
                     </button>
-                    <button class="warning" data-difficulty="hard">
-                        <i class="fas fa-exclamation-circle"></i> Hard (2)
-                    </button>
-                    <button data-difficulty="good">
-                        <i class="fas fa-check"></i> Good (3)
-                    </button>
-                    <button class="success" data-difficulty="easy">
-                        <i class="fas fa-check-double"></i> Easy (4)
-                    </button>
+                    <div class="rating-buttons-group">
+                        <button class="danger" data-difficulty="again">
+                            <i class="fas fa-redo"></i> Again (1)
+                        </button>
+                        <button class="warning" data-difficulty="hard">
+                            <i class="fas fa-exclamation-circle"></i> Hard (2)
+                        </button>
+                        <button data-difficulty="good">
+                            <i class="fas fa-check"></i> Good (3)
+                        </button>
+                        <button class="success" data-difficulty="easy">
+                            <i class="fas fa-check-double"></i> Easy (4)
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="keyboard-shortcuts">
@@ -255,6 +271,8 @@
                         <i class="fas fa-layer-group"></i> Return to Decks
                     </button>
                 </div>
+            </div>
+            
             </div>
         </div>
 
@@ -335,7 +353,7 @@
     </div>
     
     <footer>
-        <div>Recollection © 2025 - Your Ultimate Flashcard Study System</div>
+        <div>Recollection © 2025</div>
     </footer>
 
     <script src="script.js"></script>
