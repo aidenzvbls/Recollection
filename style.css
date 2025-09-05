@@ -118,6 +118,7 @@ header {
 
 
 
+
 .main-content {
     padding: 24px 0;
     margin-bottom: 24px;
@@ -426,7 +427,7 @@ button.sm {
 
 .deck-controls {
     display: flex;
-    gap: 6px;
+    gap: 1px;
     position: absolute;
     bottom: 16px;
     right: 16px;
@@ -1296,7 +1297,7 @@ footer {
 
     .deck-actions {
         flex-direction: column;
-        gap: 12px;
+        gap: 1px;
         align-items: stretch;
     }
 
@@ -1305,8 +1306,9 @@ footer {
     }
 
     .deck-controls {
+        gap: 1px;
         justify-content: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     /* Flashcard */
