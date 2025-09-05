@@ -802,15 +802,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Session completion
     function completeStudySession() {
-        // Update UI
-        document.getElementById('study-card-container').style.display = 'none';
-        document.getElementById('deck-selection').style.display = 'none';
-        document.getElementById('session-complete').style.display = 'block';
-
-        document.getElementById('session-summary').innerHTML = `
-            <div>Cards Reviewed: ${cardsToStudy.length}</div>
-        `;
-
         // Update total cards studied count
         statistics.totalStudied += cardsToStudy.length;
         saveStatistics();
@@ -818,6 +809,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear study session
         clearStudySession();
         updateResumeButton();
+
+        // Automatically return to main page
+        document.getElementById('study-overlay').classList.remove('active');
+        document.body.classList.remove('study-mode');
+        
+        // Show a toast notification for completion
+        showToast('Success', `Session complete! Reviewed ${cardsToStudy.length} cards`, 'success');
     }
 
     document.getElementById('restart-session').addEventListener('click', () => {
@@ -1491,11 +1489,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Clear session when study is complete
-    function completeStudySession() {
-        clearStudySession();
-        updateResumeButton();
-    }
 
     // Initialize UI
     renderDeckList();
