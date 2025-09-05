@@ -44,11 +44,10 @@
                                 </div>
                                 <div class="col form-group">
                                     <label for="deck-tags">Tags</label>
-                                    <div class="tags-input" id="tags-container">
-                                        <input type="text" id="tag-input" placeholder="Add tags">
-                                    </div>
+                                    <input type="text" id="tag-input" class="input" placeholder="Add tags">
                                 </div>
                             </div>
+                            <div class="tags-display" id="tags-display"></div>
                             
                             <div class="form-group">
                                 <label for="card-front">Front</label>
@@ -60,23 +59,13 @@
                                 <textarea id="card-back" placeholder="Enter the answer or explanation"></textarea>
                             </div>
                             
-                            <div class="card-preview" id="card-preview" style="display: none;">
-                                <h4><i class="fas fa-eye"></i> Preview</h4>
-                                <div class="preview-card">
-                                    <div class="preview-front">
-                                        <div class="preview-label">Front:</div>
-                                        <div id="preview-front-content">Enter text to see preview</div>
-                                    </div>
-                                    <div class="preview-back">
-                                        <div class="preview-label">Back:</div>
-                                        <div id="preview-back-content">Enter text to see preview</div>
-                                    </div>
-                                </div>
-                            </div>
                             
                             <div class="form-actions">
                                 <button id="add-card">
                                     <i class="fas fa-plus"></i> Add Card
+                                </button>
+                                <button id="save-deck" class="success" style="display: none;">
+                                    <i class="fas fa-save"></i> Save Deck
                                 </button>
                                 <button id="clear-form" class="secondary">
                                     <i class="fas fa-eraser"></i> Clear Form
@@ -166,15 +155,18 @@
         <!-- Study Page -->
         <div id="study-overlay" class="study-overlay">
             <div class="study-header">
-                <button id="back-to-decks" class="back-btn">
-                    <i class="fas fa-arrow-left"></i> Back to Decks
-                </button>
-                <h2 id="study-deck-name">Studying Deck</h2>
-                <div class="study-progress-info">
-                    <span id="remaining-count">0</span> remaining of <span id="total-count">0</span> cards
+                <div class="study-header-top">
+                    <button id="back-to-decks" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 id="study-deck-name">Studying Deck</h2>
+                    <div class="header-spacer"></div>
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="study-progress"></div>
+                </div>
+                <div class="study-progress-info">
+                    <span id="remaining-count">0</span> remaining of <span id="total-count">0</span> cards
                 </div>
             </div>
             

@@ -295,6 +295,7 @@ button.sm {
 .btn-group {
     display: flex;
     gap: 12px;
+    justify-content: center;
 }
 
 .form-actions {
@@ -392,9 +393,10 @@ button.sm {
 
 .tag-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     margin: 4px 0;
+    overflow: hidden;
 }
 
 .tag {
@@ -408,23 +410,26 @@ button.sm {
 }
 
 .deck-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
     margin-top: auto;
+    height: 60px; /* Provide space for absolutely positioned buttons */
 }
 
 .study-options {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
-    flex: 1;
+    align-items: center;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
 }
 
 .deck-controls {
     display: flex;
     gap: 6px;
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
 }
 
 .btn-small {
@@ -587,60 +592,26 @@ button.sm {
     font-weight: 600;
 }
 
-.tags-input {
-    display: flex;
-    flex-wrap: wrap;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 10px 14px;
-    gap: 8px;
-    background-color: var(--card-color);
-    transition: var(--transition);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+.tags-display {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 20px;
 }
 
-.tags-input:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.tags-input input {
-    flex: 1;
-    min-width: 120px;
-    border: none;
-    outline: none;
-    padding: 4px;
-    font-size: 15px;
-    background: transparent;
-    color: var(--text-color);
+.tags-text {
+    color: var(--primary-color);
 }
 
 .tag-item {
-    display: flex;
-    align-items: center;
-    background-color: rgba(37, 99, 235, 0.1);
     color: var(--primary-color);
-    padding: 4px 10px;
-    border-radius: var(--radius);
-    font-size: 13px;
-}
-
-.tag-remove {
     cursor: pointer;
-    margin-left: 6px;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.1);
-    color: var(--primary-color);
+    transition: var(--transition);
 }
 
-.tag-remove:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+.tag-item:hover {
+    color: var(--primary-light);
+    text-decoration: underline;
 }
 
 .decks-header {
@@ -666,7 +637,6 @@ button.sm {
     height: 6px;
     background-color: var(--border-color);
     border-radius: 999px;
-    margin-bottom: 16px;
     overflow: hidden;
 }
 
@@ -771,10 +741,18 @@ body.study-mode .modal:not(#edit-card-modal) {
 .study-header {
     background: var(--card-color);
     padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.study-header-top {
     display: flex;
     align-items: center;
     gap: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.header-spacer {
+    width: 48px; /* Same width as back button to balance the layout */
 }
 
 .back-btn {
@@ -789,6 +767,8 @@ body.study-mode .modal:not(#edit-card-modal) {
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 48px;
+    justify-content: center;
 }
 
 .back-btn:hover {
@@ -798,11 +778,14 @@ body.study-mode .modal:not(#edit-card-modal) {
 .study-header h2 {
     margin: 0;
     flex: 1;
+    text-align: center;
 }
 
-.study-header .study-progress-info {
-    font-size: 14px;
+.study-progress-info {
+    text-align: center;
     color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 8px;
 }
 
 /* Deck Editor */
@@ -844,22 +827,17 @@ body.study-mode .modal:not(#edit-card-modal) {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
 }
 
 .card-item {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 12px;
+    background: transparent;
+    border: none;
+    padding: 0;
     cursor: grab;
     transition: all 0.2s ease;
     position: relative;
-}
-
-.card-item:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    margin-bottom: 0;
 }
 
 .card-item.dragging {
@@ -867,39 +845,37 @@ body.study-mode .modal:not(#edit-card-modal) {
     cursor: grabbing;
 }
 
-.card-item.drag-over {
-    border-color: var(--primary-color);
-    border-style: dashed;
+.card-preview {
+    background: var(--subtle-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 1.2;
+    position: relative;
+    transition: all 0.2s ease;
 }
 
-.card-preview {
-    font-size: 13px;
-    line-height: 1.4;
-    margin-bottom: 8px;
+.card-preview:hover {
+    border-color: var(--primary-color);
 }
 
 .card-front-preview {
     font-weight: 500;
     color: var(--text-color);
-    margin-bottom: 4px;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-.card-back-preview {
-    color: var(--text-secondary);
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    margin-right: 60px;
 }
 
 .card-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
     display: flex;
-    gap: 4px;
-    justify-content: flex-end;
+    gap: 2px;
 }
 
 .card-action-btn {
@@ -924,19 +900,6 @@ body.study-mode .modal:not(#edit-card-modal) {
     color: #ef4444;
 }
 
-.drag-handle {
-    position: absolute;
-    left: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    cursor: grab;
-    font-size: 12px;
-}
-
-.card-item:hover .drag-handle {
-    color: var(--text-color);
-}
 
 /* Card Preview */
 .card-preview {
@@ -1020,7 +983,7 @@ body.study-mode .modal:not(#edit-card-modal) {
     color: var(--text-secondary);
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1324,11 +1287,36 @@ footer {
     padding: 4px;
     border-radius: 4px;
     transition: var(--transition);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
 }
 
 .action-btn:hover {
     color: var(--primary-color);
     background-color: rgba(37, 99, 235, 0.1);
+}
+
+.hard-btn-wide {
+    background-color: var(--warning-color);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    min-width: 36px;
+}
+
+.hard-btn-wide:hover {
+    background-color: #d97706;
+    opacity: 0.9;
 }
 
 /* Type switch */

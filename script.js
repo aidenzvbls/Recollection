@@ -30,9 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (button.classList.contains('study-deck-btn')) {
             const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
             startStudySession(deckName);
-        } else if (button.classList.contains('study-again-btn')) {
-            const deckName = button.getAttribute('data-deck');
-            startStudySession(deckName, 'again');
         } else if (button.classList.contains('study-hard-btn')) {
             const deckName = button.getAttribute('data-deck');
             startStudySession(deckName, 'hard');
@@ -86,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Tags input functionality
     const tagInput = document.getElementById('tag-input');
-    const tagsContainer = document.getElementById('tags-container');
+    const tagsDisplay = document.getElementById('tags-display');
 
     tagInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && this.value.trim() !== '') {
@@ -100,37 +97,39 @@ document.addEventListener('DOMContentLoaded', function() {
         // Don't add duplicate tags
         if (currentTags.includes(tagText)) return;
 
-        const tag = document.createElement('div');
-        tag.className = 'tag-item';
-        tag.innerHTML = `
-            ${tagText}
-            <span class="tag-remove" data-tag="${tagText}"><i class="fas fa-times"></i></span>
-        `;
-        tagsContainer.insertBefore(tag, tagInput);
         currentTags.push(tagText);
-
-        // Add event listener to remove tag
-        tag.querySelector('.tag-remove').addEventListener('click', function() {
-            const tagToRemove = this.getAttribute('data-tag');
-            removeTag(tagToRemove);
-        });
+        renderTags();
     }
 
     function removeTag(tagText) {
-        const tagElements = document.querySelectorAll('.tag-item');
-        tagElements.forEach(tag => {
-            if (tag.textContent.trim().replace('×', '') === tagText) {
-                tag.remove();
-            }
-        });
-
         currentTags = currentTags.filter(tag => tag !== tagText);
+        renderTags();
     }
 
     function clearTags() {
-        const tagElements = document.querySelectorAll('.tag-item');
-        tagElements.forEach(tag => tag.remove());
         currentTags = [];
+        renderTags();
+    }
+
+    function renderTags() {
+        if (currentTags.length === 0) {
+            tagsDisplay.innerHTML = '';
+            return;
+        }
+
+        const tagsHtml = currentTags.map(tag => 
+            `<span class="tag-item" data-tag="${tag}">${tag}</span>`
+        ).join(', ');
+
+        tagsDisplay.innerHTML = `<div class="tags-text">${tagsHtml}</div>`;
+
+        // Add click listeners to all tag items
+        tagsDisplay.querySelectorAll('.tag-item').forEach(tagElement => {
+            tagElement.addEventListener('click', function() {
+                const tagToRemove = this.getAttribute('data-tag');
+                removeTag(tagToRemove);
+            });
+        });
     }
 
     // Add card functionality
@@ -239,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cardFrontInput.value = '';
         cardBackInput.value = '';
         clearTags();
-        updateCardPreview(); // Update preview to hide it
         cardFrontInput.focus();
     });
 
@@ -516,7 +514,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const deckElement = document.createElement('div');
                 deckElement.className = 'deck-card';
                 deckElement.innerHTML = `
-                    <div class="deck-color-tag" style="background-color: ${deckColor};"></div>
                     <div class="deck-header">
                         <h3 class="deck-title">${deckName}</h3>
                         <div>${getLastStudiedDate(deckName)}</div>
@@ -540,8 +537,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="study-deck-btn">
                                 <i class="fas fa-book-open"></i> Study
                             </button>
-                            ${performanceCounts.again > 0 ? `<button class="study-again-btn btn-small danger" data-deck="${deckName}">Again (${performanceCounts.again})</button>` : ''}
-                            ${performanceCounts.hard > 0 ? `<button class="study-hard-btn btn-small warning" data-deck="${deckName}">Hard (${performanceCounts.hard})</button>` : ''}
+                            ${performanceCounts.hard > 0 ? `<button class="study-hard-btn hard-btn-wide" title="Study Hard Cards (${performanceCounts.hard})" data-deck="${deckName}">
+                                <i class="fas fa-exclamation"></i>
+                            </button>` : ''}
                         </div>
                         <div class="deck-controls">
                             <button class="action-btn edit-deck-btn" title="Edit Deck" data-deck="${deckName}">
@@ -576,11 +574,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('show-deck-list').addEventListener('click', () => {
         document.getElementById('study-overlay').classList.remove('active');
         document.body.classList.remove('study-mode');
+        
+        // Refresh deck list to show updated hard button status
+        renderDeckList();
+        updateStatistics();
     });
 
     document.getElementById('back-to-decks').addEventListener('click', () => {
         document.getElementById('study-overlay').classList.remove('active');
         document.body.classList.remove('study-mode');
+        
+        // Refresh deck list to show updated hard button status
+        renderDeckList();
+        updateStatistics();
     });
 
     // Add resume session button to event delegation
@@ -613,7 +619,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Get cards based on filter
         if (performanceFilter) {
-            cardsToStudy = decks[deckName].filter(card => card.lastPerformance === performanceFilter);
+            if (performanceFilter === 'hard') {
+                // Include both 'hard' and 'again' cards in the hard filter
+                cardsToStudy = decks[deckName].filter(card => 
+                    card.lastPerformance === 'hard' || card.lastPerformance === 'again'
+                );
+            } else {
+                cardsToStudy = decks[deckName].filter(card => card.lastPerformance === performanceFilter);
+            }
         } else {
             // Get due cards using the SM-2 algorithm
             cardsToStudy = getDueCards(deckName);
@@ -708,17 +721,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getPerformanceCounts(deckName) {
-        if (!decks[deckName]) return { again: 0, hard: 0 };
+        if (!decks[deckName]) return { hard: 0 };
         
-        let againCount = 0;
         let hardCount = 0;
         
         decks[deckName].forEach(card => {
-            if (card.lastPerformance === 'again') againCount++;
-            else if (card.lastPerformance === 'hard') hardCount++;
+            if (card.lastPerformance === 'again' || card.lastPerformance === 'hard') {
+                hardCount++;
+            }
         });
         
-        return { again: againCount, hard: hardCount };
+        return { hard: hardCount };
     }
 
     function showCurrentCard() {
@@ -750,8 +763,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('rating-controls').style.display = 'none';
 
         // Update remaining count and progress bar
-        document.getElementById('remaining-count').textContent = cardsToStudy.length - currentCardIndex;
-        const progressPercentage = ((currentCardIndex) / cardsToStudy.length) * 100;
+        const totalCards = cardsToStudy.length + againCards.length;
+        document.getElementById('remaining-count').textContent = totalCards - currentCardIndex;
+        const progressPercentage = ((currentCardIndex) / totalCards) * 100;
         document.getElementById('study-progress').style.width = `${progressPercentage}%`;
     }
 
@@ -814,6 +828,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('study-overlay').classList.remove('active');
         document.body.classList.remove('study-mode');
         
+        // Refresh deck list to show updated hard button status
+        renderDeckList();
+        updateStatistics();
+        
         // Show a toast notification for completion
         showToast('Success', `Session complete! Reviewed ${cardsToStudy.length} cards`, 'success');
     }
@@ -855,6 +873,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // If rated "again", add to again cards for replay
         if (difficulty === 'again') {
             againCards.push({...originalCard});
+            // Update total count to reflect the additional card
+            document.getElementById('total-count').textContent = cardsToStudy.length + againCards.length;
         }
 
         // Apply SM-2 algorithm
@@ -1205,12 +1225,15 @@ document.addEventListener('DOMContentLoaded', function() {
         isEditingDeck = editing;
         editingDeckName = editing ? deckName : null;
         
-        // Update modal title
+        // Update modal title and show/hide save button
         const title = document.getElementById('create-deck-title');
+        const saveDeckBtn = document.getElementById('save-deck');
         if (editing) {
             title.innerHTML = '<i class="fas fa-edit"></i> Edit Deck';
+            saveDeckBtn.style.display = 'inline-flex';
         } else {
             title.innerHTML = '<i class="fas fa-plus"></i> Create New Deck';
+            saveDeckBtn.style.display = 'none';
         }
         
         // Clear form
@@ -1218,6 +1241,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('card-front').value = '';
         document.getElementById('card-back').value = '';
         clearTags();
+        
+        // Always show sidebar
+        document.getElementById('cards-sidebar').style.display = 'flex';
         
         if (editing && decks[deckName]) {
             // Get unique tags from deck
@@ -1233,12 +1259,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 addTag(tag);
             });
             
-            // Show sidebar and populate cards
-            document.getElementById('cards-sidebar').style.display = 'flex';
+            // Populate existing cards
             renderExistingCards(deckName);
         } else {
-            // Hide sidebar for new deck
-            document.getElementById('cards-sidebar').style.display = 'none';
+            // Initialize empty sidebar for new deck
+            renderExistingCards('');
         }
         
         document.getElementById('create-deck-modal').classList.add('active');
@@ -1272,20 +1297,16 @@ document.addEventListener('DOMContentLoaded', function() {
             cardItem.dataset.index = index;
 
             cardItem.innerHTML = `
-                <div class="drag-handle">
-                    <i class="fas fa-grip-vertical"></i>
-                </div>
                 <div class="card-preview">
                     <div class="card-front-preview">${card.front}</div>
-                    <div class="card-back-preview">${card.back}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="card-action-btn edit" data-card-id="${card.id}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="card-action-btn delete" data-card-id="${card.id}">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="card-actions">
+                        <button class="card-action-btn edit" data-card-id="${card.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="card-action-btn delete" data-card-id="${card.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -1436,6 +1457,43 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
+    // Save deck button handler
+    document.getElementById('save-deck').addEventListener('click', () => {
+        if (isEditingDeck && editingDeckName) {
+            const newDeckName = document.getElementById('deck-name').value.trim() || editingDeckName;
+            
+            // Check if deck name changed and new name already exists
+            if (editingDeckName !== newDeckName && decks[newDeckName]) {
+                showToast('Error', 'A deck with that name already exists', 'error');
+                return;
+            }
+            
+            // Handle deck renaming
+            if (editingDeckName !== newDeckName) {
+                if (decks[editingDeckName]) {
+                    decks[newDeckName] = decks[editingDeckName];
+                    delete decks[editingDeckName];
+                }
+            }
+            
+            // Update all cards with current tags
+            if (decks[newDeckName]) {
+                decks[newDeckName].forEach(card => {
+                    card.tags = [...currentTags];
+                });
+            }
+            
+            // Save changes
+            saveDecks();
+            
+            // Close the modal and show success message
+            document.getElementById('create-deck-modal').classList.remove('active');
+            renderDeckList();
+            updateStatistics();
+            showToast('Success', `Deck "${newDeckName}" saved successfully`, 'success');
+        }
+    });
+
     // Create/Edit deck modal handlers
     document.getElementById('close-create-deck-modal').addEventListener('click', () => {
         document.getElementById('create-deck-modal').classList.remove('active');
@@ -1452,24 +1510,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Card preview functionality
-    function updateCardPreview() {
-        const frontText = document.getElementById('card-front').value.trim();
-        const backText = document.getElementById('card-back').value.trim();
-        const preview = document.getElementById('card-preview');
-        
-        if (frontText || backText) {
-            preview.style.display = 'block';
-            document.getElementById('preview-front-content').textContent = frontText || 'Enter front text...';
-            document.getElementById('preview-back-content').textContent = backText || 'Enter back text...';
-        } else {
-            preview.style.display = 'none';
-        }
-    }
-
-    // Add event listeners for real-time preview
-    document.getElementById('card-front').addEventListener('input', updateCardPreview);
-    document.getElementById('card-back').addEventListener('input', updateCardPreview);
 
     // Close modals when clicking outside
     document.addEventListener('click', (e) => {
