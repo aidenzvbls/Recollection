@@ -650,8 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('deck-selection').style.display = 'none';
             document.getElementById('session-complete').style.display = 'none';
 
-            // Shuffle cards
-            cardsToStudy = shuffleArray(cardsToStudy);
+            // Keep cards in original order (creation order)
             currentCardIndex = 0;
 
             // Show the first card
@@ -1209,14 +1208,6 @@ document.addEventListener('DOMContentLoaded', function() {
                Math.random().toString(36).substring(2, 15);
     }
 
-    function shuffleArray(array) {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    }
 
     // Open create/edit deck modal
     function openCreateDeckModal(editing, deckName = '') {
