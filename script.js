@@ -223,10 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
         cardBackInput.value = '';
         cardFrontInput.focus();
 
-        // Update existing cards list if in edit mode
-        if (isEditingDeck) {
-            renderExistingCards(deckName);
-        }
+        // Update existing cards list
+        renderExistingCards(deckName);
 
         // Update deck list
         renderDeckList();
@@ -776,16 +774,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle cloze cards differently
         if (card.type === 'cloze') {
-            // For front side, replace cloze with [...]
-            frontContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]</span>');
+            // For front side, replace cloze with [...] and preserve line breaks
+            frontContent.innerHTML = card.front.replace(/\n/g, '<br>').replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]</span>');
 
-            // For back side, highlight the cloze content
-            backContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1</span>') +
-                (card.back ? `<hr style="margin: 1rem 0"><div>${card.back}</div>` : '');
+            // For back side, highlight the cloze content and preserve line breaks
+            backContent.innerHTML = card.front.replace(/\n/g, '<br>').replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1</span>') +
+                (card.back ? `<hr style="margin: 1rem 0"><div>${card.back.replace(/\n/g, '<br>')}</div>` : '');
         } else {
-            // Basic cards
-            frontContent.textContent = card.front;
-            backContent.textContent = card.back;
+            // Basic cards - preserve line breaks
+            frontContent.innerHTML = card.front.replace(/\n/g, '<br>');
+            backContent.innerHTML = card.back.replace(/\n/g, '<br>');
         }
     }
 
@@ -1225,16 +1223,15 @@ document.addEventListener('DOMContentLoaded', function() {
         isEditingDeck = editing;
         editingDeckName = editing ? deckName : null;
         
-        // Update modal title and show/hide save button
+        // Update modal title and show save button
         const title = document.getElementById('create-deck-title');
         const saveDeckBtn = document.getElementById('save-deck');
         if (editing) {
             title.innerHTML = '<i class="fas fa-edit"></i> Edit Deck';
-            saveDeckBtn.style.display = 'inline-flex';
         } else {
             title.innerHTML = '<i class="fas fa-plus"></i> Create New Deck';
-            saveDeckBtn.style.display = 'none';
         }
+        saveDeckBtn.style.display = 'inline-flex';
         
         // Clear form
         document.getElementById('deck-name').value = editing ? deckName : '';
@@ -1298,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             cardItem.innerHTML = `
                 <div class="card-preview">
-                    <div class="card-front-preview">${card.front}</div>
+                    <div class="card-front-preview">${card.front.replace(/\n/g, '<br>')}</div>
                     <div class="card-actions">
                         <button class="card-action-btn edit" data-card-id="${card.id}">
                             <i class="fas fa-edit"></i>
@@ -1459,8 +1456,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save deck button handler
     document.getElementById('save-deck').addEventListener('click', () => {
+        const deckName = document.getElementById('deck-name').value.trim();
+        
+        if (!deckName) {
+            showToast('Error', 'Please enter a deck name', 'error');
+            return;
+        }
+        
         if (isEditingDeck && editingDeckName) {
-            const newDeckName = document.getElementById('deck-name').value.trim() || editingDeckName;
+            // Editing existing deck
+            const newDeckName = deckName;
             
             // Check if deck name changed and new name already exists
             if (editingDeckName !== newDeckName && decks[newDeckName]) {
@@ -1483,15 +1488,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
-            // Save changes
-            saveDecks();
-            
-            // Close the modal and show success message
-            document.getElementById('create-deck-modal').classList.remove('active');
-            renderDeckList();
-            updateStatistics();
             showToast('Success', `Deck "${newDeckName}" saved successfully`, 'success');
+        } else {
+            // Creating new deck
+            if (decks[deckName]) {
+                showToast('Error', 'A deck with that name already exists', 'error');
+                return;
+            }
+            
+            // Create the deck if it doesn't exist
+            if (!decks[deckName]) {
+                decks[deckName] = [];
+            }
+            
+            // Update all cards with current tags
+            if (decks[deckName]) {
+                decks[deckName].forEach(card => {
+                    card.tags = [...currentTags];
+                });
+            }
+            
+            showToast('Success', `Deck "${deckName}" created successfully`, 'success');
         }
+        
+        // Save changes
+        saveDecks();
+        
+        // Close the modal and refresh UI
+        document.getElementById('create-deck-modal').classList.remove('active');
+        renderDeckList();
+        updateStatistics();
     });
 
     // Create/Edit deck modal handlers
