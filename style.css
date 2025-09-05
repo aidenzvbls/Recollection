@@ -541,11 +541,25 @@ button.sm {
     border: 1px solid var(--border-color);
 }
 
+.keybinds-title {
+    margin: 0 0 12px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
 .shortcut-list {
     display: flex;
     justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
+}
+
+.secondary-controls {
+    margin-top: 16px;
+    justify-content: center;
+    gap: 12px;
 }
 
 .shortcut-item {

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let cardType = 'basic'; // 'basic' or 'cloze'
     let isEditingDeck = false;
     let againCards = []; // Cards that were rated "again" to replay at end
+    let completedCardsHistory = []; // Track completed cards for going back functionality
     let studySession = JSON.parse(localStorage.getItem('current-study-session')) || null;
     let statistics = JSON.parse(localStorage.getItem('flashcards-stats')) || {
         totalStudied: 0,
@@ -630,8 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
             cardsToStudy = getDueCards(deckName);
         }
 
-        // Reset again cards for new session
+        // Reset again cards and completed history for new session
         againCards = [];
+        completedCardsHistory = [];
 
         // Clear any existing session and save new one
         clearStudySession();
@@ -807,9 +809,59 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('#rating-controls button').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const difficulty = e.target.closest('button').getAttribute('data-difficulty');
-            processCardRating(difficulty);
+            if (difficulty) {
+                processCardRating(difficulty);
+            }
         });
     });
+
+    // Go back to previous card
+    document.getElementById('previous-card').addEventListener('click', () => {
+        goBackToPreviousCard();
+    });
+
+    function goBackToPreviousCard() {
+        // Check if there are any completed cards to go back to
+        if (completedCardsHistory.length === 0) {
+            showToast('Info', 'No previous cards to go back to', 'info');
+            return;
+        }
+
+        // Get the last completed card
+        const previousCardData = completedCardsHistory.pop();
+        
+        // Restore the original card state (revert the progress)
+        const originalCard = findOriginalCard(previousCardData.card);
+        if (originalCard) {
+            // If this card was added to "again" cards, remove it since we're reverting
+            if (originalCard.lastPerformance === 'again') {
+                const againIndex = againCards.findIndex(card => card.id === originalCard.id);
+                if (againIndex !== -1) {
+                    againCards.splice(againIndex, 1);
+                }
+            }
+            
+            originalCard.lastReviewed = previousCardData.originalState.lastReviewed;
+            originalCard.lastPerformance = previousCardData.originalState.lastPerformance;
+            originalCard.interval = previousCardData.originalState.interval;
+            originalCard.ease = previousCardData.originalState.ease;
+            originalCard.status = previousCardData.originalState.status;
+            
+            // Save the reverted state
+            saveDecks();
+        }
+        
+        // Simply go back to the previous card position - don't add cards to queue
+        currentCardIndex = Math.max(0, currentCardIndex - 1);
+        
+        // Show the previous card using the normal flow
+        showCurrentCard();
+        
+        // Save the updated study session
+        saveStudySession();
+        
+        showToast('Success', 'Reverted to previous card', 'success');
+    }
 
     // Session completion
     function completeStudySession() {
@@ -862,6 +914,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalCard = findOriginalCard(card);
 
         if (!originalCard) return;
+
+        // Add the current card to completed history before processing
+        // Store a copy of the card and its original state for potential rollback
+        completedCardsHistory.push({
+            card: {...card},
+            originalState: {
+                lastReviewed: originalCard.lastReviewed,
+                lastPerformance: originalCard.lastPerformance,
+                interval: originalCard.interval,
+                ease: originalCard.ease,
+                status: originalCard.status
+            },
+            cardIndex: currentCardIndex
+        });
 
         // Update last reviewed time and performance
         originalCard.lastReviewed = new Date().toISOString();
@@ -1399,6 +1465,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cardsToStudy: cardsToStudy,
                 currentCardIndex: currentCardIndex,
                 againCards: againCards,
+                completedCardsHistory: completedCardsHistory,
                 timestamp: Date.now()
             };
             localStorage.setItem('current-study-session', JSON.stringify(studySession));
@@ -1425,6 +1492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardsToStudy = studySession.cardsToStudy;
         currentCardIndex = studySession.currentCardIndex;
         againCards = studySession.againCards || [];
+        completedCardsHistory = studySession.completedCardsHistory || [];
         
         // Show study overlay and hide main content
         document.getElementById('study-overlay').classList.add('active');
