@@ -29,8 +29,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Check for specific buttons and trigger their handlers
         if (button.classList.contains('study-deck-btn')) {
-            const deckName = button.closest('.deck-card').querySelector('.deck-title').textContent;
-            startStudySession(deckName);
+            const deckName = button.getAttribute('data-deck') || button.closest('.deck-card').querySelector('.deck-title').textContent;
+            
+            // Check if this should resume an existing session
+            const hasActiveSession = canResumeSession() && studySession && studySession.deckName === deckName;
+            
+            if (hasActiveSession) {
+                if (resumeStudySession()) {
+                    showToast('Success', 'Study session resumed', 'success');
+                } else {
+                    showToast('Error', 'Failed to resume session', 'error');
+                }
+            } else {
+                startStudySession(deckName);
+            }
         } else if (button.classList.contains('study-hard-btn')) {
             const deckName = button.getAttribute('data-deck');
             startStudySession(deckName, 'hard');
@@ -498,6 +510,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dueCount = getDueCardsCount(deckName);
                 const performanceCounts = getPerformanceCounts(deckName);
 
+                // Check if there's an active session for this deck
+                const hasActiveSession = canResumeSession() && studySession && studySession.deckName === deckName;
+
                 // Get all unique tags in the deck
                 const deckTags = new Set();
                 deckCards.forEach(card => {
@@ -533,11 +548,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="deck-actions">
                         <div class="study-options">
-                            <button class="study-deck-btn">
-                                <i class="fas fa-book-open"></i> Study
+                            <button class="study-deck-btn" data-deck="${deckName}">
+                                ${hasActiveSession ? 
+                                    `<i class="fas fa-play"></i> Resume` : 
+                                    `<i class="fas fa-book-open"></i> Study`}
                             </button>
                             ${performanceCounts.hard > 0 ? `<button class="study-hard-btn hard-btn-wide" title="Study Hard Cards (${performanceCounts.hard})" data-deck="${deckName}">
-                                <i class="fas fa-exclamation"></i>
+                                <i class="fa-solid fa-circle-exclamation"></i>
                             </button>` : ''}
                         </div>
                         <div class="deck-controls">
@@ -588,16 +605,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStatistics();
     });
 
-    // Add resume session button to event delegation
-    document.addEventListener('click', (e) => {
-        if (e.target.id === 'resume-session' || e.target.closest('#resume-session')) {
-            if (resumeStudySession()) {
-                showToast('Success', 'Study session resumed', 'success');
-            } else {
-                showToast('Error', 'No session to resume', 'error');
-            }
-        }
-    });
 
 
 
@@ -871,7 +878,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Clear study session
         clearStudySession();
-        updateResumeButton();
 
         // Automatically return to main page
         document.getElementById('study-overlay').classList.remove('active');
@@ -1500,15 +1506,15 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('study-deck-name').textContent = `Resuming: ${currentStudyingDeck}`;
         
         // Update UI
-        document.getElementById('total-count').textContent = cardsToStudy.length;
-        document.getElementById('remaining-count').textContent = cardsToStudy.length - currentCardIndex;
+        const totalCards = cardsToStudy.length + againCards.length;
+        document.getElementById('total-count').textContent = totalCards;
+        document.getElementById('remaining-count').textContent = totalCards - currentCardIndex;
         
-        if (currentCardIndex < cardsToStudy.length) {
-            document.getElementById('study-card-container').style.display = 'block';
-            document.getElementById('deck-selection').style.display = 'none';
-            document.getElementById('session-complete').style.display = 'none';
-            showCurrentCard();
-        }
+        // Always show current card and let it handle completion logic
+        document.getElementById('study-card-container').style.display = 'block';
+        document.getElementById('deck-selection').style.display = 'none';
+        document.getElementById('session-complete').style.display = 'none';
+        showCurrentCard();
         
         return true;
     }
@@ -1603,20 +1609,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Show/hide resume button
-    function updateResumeButton() {
-        const resumeBtn = document.getElementById('resume-session');
-        if (canResumeSession()) {
-            resumeBtn.style.display = 'inline-flex';
-            resumeBtn.innerHTML = `<i class="fas fa-play"></i> Resume ${studySession.deckName}`;
-        } else {
-            resumeBtn.style.display = 'none';
-        }
-    }
 
 
     // Initialize UI
     renderDeckList();
     updateStatistics();
-    updateResumeButton();
 }); 
