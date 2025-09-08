@@ -51,12 +51,12 @@
                             
                             <div class="form-group">
                                 <label for="card-front">Front</label>
-                                <textarea id="card-front" placeholder="Enter your question or prompt"></textarea>
+                                <div id="card-front" contenteditable="true" class="editable-area" placeholder="Enter your question or prompt"></div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="card-back">Back</label>
-                                <textarea id="card-back" placeholder="Enter the answer or explanation"></textarea>
+                                <div id="card-back" contenteditable="true" class="editable-area" placeholder="Enter the answer or explanation"></div>
                             </div>
                             
                             
@@ -88,7 +88,7 @@
 
         <div id="decks" class="main-content">
             <div class="decks-header">
-                <h2><i class="fas fa-layer-group"></i> My Decks</h2>
+                <h2><i class="fa-solid fa-inbox"></i> Decks</h2>
                 <div class="header-actions">
                     <button id="create-new-deck" class="btn-small">
                         <i class="fas fa-plus"></i> New Deck
@@ -212,23 +212,6 @@
                     </div>
                 </div>
                 
-                <div class="keyboard-shortcuts">
-                    <h4 class="keybinds-title">Keybinds</h4>
-                    <div class="shortcut-list">
-                        <div class="shortcut-item">
-                            <div class="key">Space</div>
-                            <div>Flip Card</div>
-                        </div>
-                        <div class="shortcut-item">
-                            <div class="key">1-4</div>
-                            <div>Rate Card</div>
-                        </div>
-                        <div class="shortcut-item">
-                            <div class="key">E</div>
-                            <div>Edit</div>
-                        </div>
-                    </div>
-                </div>
                 
                 <div class="study-controls secondary-controls">
                     <button id="previous-card" class="secondary" title="Previous Card">
@@ -285,12 +268,12 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="edit-card-front">Front (Question)</label>
-                        <textarea id="edit-card-front" placeholder="Enter your question or prompt"></textarea>
+                        <div id="edit-card-front" contenteditable="true" class="editable-area" placeholder="Enter your question or prompt"></div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="edit-card-back">Back (Answer)</label>
-                        <textarea id="edit-card-back" placeholder="Enter the answer or explanation"></textarea>
+                        <div id="edit-card-back" contenteditable="true" class="editable-area" placeholder="Enter the answer or explanation"></div>
                     </div>
                 </div>
                 <div class="modal-footer">

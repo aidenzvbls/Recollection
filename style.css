@@ -440,7 +440,7 @@ button.sm {
 }
 
 .study-card-container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
     width: 100%;
 }
@@ -448,7 +448,7 @@ button.sm {
 .flashcard {
     position: relative;
     width: 100%;
-    height: 350px;
+    height: 480px;
     margin-bottom: 24px;
 }
 
@@ -494,10 +494,19 @@ button.sm {
 }
 
 .card-content {
-    font-size: 24px;
+    font-size: 28px;
     line-height: 1.5;
     max-width: 100%;
     word-break: break-word;
+}
+
+.card-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin: 0 auto 16px;
+    display: block;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .card-meta {
@@ -535,49 +544,49 @@ button.sm {
 }
 
 .keyboard-shortcuts {
-    margin-top: 20px;
-    padding: 12px;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 80%;
+    margin-top: 0;
+    padding: 8px 12px;
     background-color: var(--subtle-color);
     border-radius: var(--radius);
     border: 1px solid var(--border-color);
+    z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
 }
 
 .keybinds-title {
-    margin: 0 0 12px 0;
+    margin: 0 0 4px 0;
+    font-size: 12px;
     text-align: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-color);
 }
 
 .shortcut-list {
     display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-}
-
-.secondary-controls {
-    margin-top: 16px;
-    justify-content: center;
     gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .shortcut-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    font-size: 12px;
 }
 
 .key {
     background-color: var(--card-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 2px 4px;
+    font-size: 10px;
     font-weight: 600;
-    color: var(--text-color);
-    min-width: 24px;
+    min-width: 20px;
     text-align: center;
 }
 
@@ -707,7 +716,10 @@ button.sm {
 }
 
 .large-modal {
-    max-width: 900px;
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    max-height: none;
 }
 
 /* Study Page */
@@ -721,7 +733,7 @@ button.sm {
     z-index: 1000;
     display: none;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden; /* Prevent page scroll; only card will scroll */
 }
 
 .study-overlay.active {
@@ -807,12 +819,15 @@ body.study-mode .modal:not(#edit-card-modal) {
 .deck-editor {
     display: flex;
     gap: 2rem;
-    height: 70vh;
+    height: calc(100vh - 60px); /* Adjust for header */
+    padding: 1rem;
     overflow: hidden;
 }
 
 .editor-main {
     flex: 1;
+    overflow-y: auto;
+    padding-right: 1rem;
     min-width: 0;
 }
 
@@ -1306,6 +1321,15 @@ footer {
     }
 
     .deck-controls {
+        display: none;
+    }
+
+    #create-new-deck,
+    #import-deck {
+        display: none;
+    }
+
+    .deck-controls {
         gap: 1px;
         justify-content: center;
         flex-wrap: nowrap;
@@ -1643,4 +1667,126 @@ button, .flashcard, .deck-card, .action-btn {
 .switch-option.active {
     background-color: var(--primary-color);
     color: white;
+} 
+
+.editable-area {
+    min-height: 120px;
+    padding: 14px 18px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    font-size: 15px;
+    line-height: 1.5;
+    outline: none;
+    transition: var(--transition);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.editable-area:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.editable-area:empty:before {
+    content: attr(placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+    display: block;
+}
+
+/* For images in editable */
+.editable-area img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px auto;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    resize: none; /* Remove built-in */
+    overflow: auto;
+    cursor: pointer; /* To indicate clickable for delete */
+} 
+
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: nwse-resize; /* Default, will override per direction */
+    z-index: 10;
+}
+
+.resize-handle.nw {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+
+.resize-handle.ne {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+}
+
+.resize-handle.sw {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+}
+
+.resize-handle.se {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+} 
+
+/* Image size toolbar */
+.image-size-toolbar {
+    position: fixed;
+    background: var(--card-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    padding: 8px 10px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.image-size-toolbar.hidden {
+    display: none;
+}
+
+.img-size-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.image-size-toolbar .size-btn {
+    background: var(--subtle-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.image-size-toolbar .size-btn:hover {
+    background: var(--border-color);
+}
+
+.image-size-toolbar .size-slider {
+    width: 120px;
+}
+
+.image-size-toolbar .size-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: right;
 } 

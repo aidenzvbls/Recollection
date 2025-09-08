@@ -152,8 +152,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const deckNameInput = document.getElementById('deck-name');
 
     addCardButton.addEventListener('click', () => {
-        let front = cardFrontInput.value.trim();
-        let back = cardBackInput.value.trim();
+        let front = document.getElementById('card-front').innerHTML.trim();
+        let back = document.getElementById('card-back').innerHTML.trim();
         const deckName = deckNameInput.value.trim() || 'Default Deck';
 
         if (!front) {
@@ -214,8 +214,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add new card to deck
             const newCard = {
                 id: generateId(),
-                front: front,
-                back: back,
+                front: front, // now HTML
+                back: back, // now HTML
                 tags: [...currentTags],
                 type: cardType,
                 lastReviewed: null,
@@ -232,9 +232,15 @@ document.addEventListener('DOMContentLoaded', function() {
         saveDecks();
 
         // Clear inputs but keep deck name and tags
-        cardFrontInput.value = '';
-        cardBackInput.value = '';
-        cardFrontInput.focus();
+        document.getElementById('card-front').innerHTML = '';
+        document.getElementById('card-back').innerHTML = '';
+        document.getElementById('card-front').focus();
+
+        // Clear any stray inputs if present (safe no-op if missing)
+        const frontUrl = document.getElementById('card-front-image');
+        const backUrl = document.getElementById('card-back-image');
+        if (frontUrl) frontUrl.value = '';
+        if (backUrl) backUrl.value = '';
 
         // Update existing cards list
         renderExistingCards(deckName);
@@ -276,8 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentCardIndex < cardsToStudy.length) {
                 const card = cardsToStudy[currentCardIndex];
                 editingCardId = card.id;
-                document.getElementById('edit-card-front').value = card.front;
-                document.getElementById('edit-card-back').value = card.back;
+                document.getElementById('edit-card-front').innerHTML = card.front;
+                document.getElementById('edit-card-back').innerHTML = card.back;
                 document.getElementById('edit-card-modal').classList.add('active');
             }
         });
@@ -285,8 +291,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     saveEditButton.addEventListener('click', () => {
         if (editingCardId) {
-            const newFront = document.getElementById('edit-card-front').value.trim();
-            const newBack = document.getElementById('edit-card-back').value.trim();
+            const newFront = document.getElementById('edit-card-front').innerHTML.trim();
+            const newBack = document.getElementById('edit-card-back').innerHTML.trim();
 
             if (!newFront) {
                 showToast('Error', 'Front side cannot be empty', 'error');
@@ -776,22 +782,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCardDisplay(card) {
-        // Update card content
         const frontContent = document.getElementById('card-front-content');
         const backContent = document.getElementById('card-back-content');
 
-        // Handle cloze cards differently
         if (card.type === 'cloze') {
-            // For front side, replace cloze with [...] and preserve line breaks
-            frontContent.innerHTML = card.front.replace(/\n/g, '<br>').replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]</span>');
+            // For cloze, need to handle {{}} in HTML context
+            // Assume front is text, but to support rich, parse and replace
+            // For simplicity, keep replace but on card.front which is HTML
+            // But {{}} might be in text nodes
+            // This might be complex; perhaps use a function to replace cloze in HTML
+            // For now, assume cloze is text-only, or adjust
+            frontContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]</span>');
 
-            // For back side, highlight the cloze content and preserve line breaks
-            backContent.innerHTML = card.front.replace(/\n/g, '<br>').replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1</span>') +
-                (card.back ? `<hr style="margin: 1rem 0"><div>${card.back.replace(/\n/g, '<br>')}</div>` : '');
+            backContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1</span>') +
+                (card.back ? `<hr style="margin: 1rem 0"><div>${card.back}</div>` : '');
         } else {
-            // Basic cards - preserve line breaks
-            frontContent.innerHTML = card.front.replace(/\n/g, '<br>');
-            backContent.innerHTML = card.back.replace(/\n/g, '<br>');
+            frontContent.innerHTML = card.front;
+            backContent.innerHTML = card.back;
         }
     }
 
@@ -1162,6 +1169,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!card.interval) card.interval = 1;
                     if (!card.ease) card.ease = 2.5;
                     if (!card.status) card.status = 'new';
+                    if (!card.frontImage) card.frontImage = '';
+                    if (!card.backImage) card.backImage = '';
 
                     decks[deckName].push(card);
                 });
@@ -1218,8 +1227,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currentCardIndex < cardsToStudy.length) {
                     const card = cardsToStudy[currentCardIndex];
                     editingCardId = card.id;
-                    document.getElementById('edit-card-front').value = card.front;
-                    document.getElementById('edit-card-back').value = card.back;
+                    document.getElementById('edit-card-front').innerHTML = card.front;
+                    document.getElementById('edit-card-back').innerHTML = card.back;
+                    document.getElementById('edit-card-front-image').value = card.frontImage || '';
+                    document.getElementById('edit-card-back-image').value = card.backImage || '';
                     document.getElementById('edit-card-modal').classList.add('active');
                 }
                 break;
@@ -1358,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             cardItem.innerHTML = `
                 <div class="card-preview">
-                    <div class="card-front-preview">${card.front.replace(/\n/g, '<br>')}</div>
+                    <div class="card-front-preview">${card.front}</div>
                     <div class="card-actions">
                         <button class="card-action-btn edit" data-card-id="${card.id}">
                             <i class="fas fa-edit"></i>
@@ -1435,8 +1446,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const card = decks[deckName].find(c => c.id === cardId);
         
         if (card) {
-            document.getElementById('card-front').value = card.front;
-            document.getElementById('card-back').value = card.back;
+            document.getElementById('card-front').innerHTML = card.front;
+            document.getElementById('card-back').innerHTML = card.back;
             editingCardId = cardId;
             
             // Change add button to update button
@@ -1609,6 +1620,366 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Add function to handle paste
+    function handlePaste(e) {
+        e.preventDefault();
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.style.maxWidth = '100%';
+                    img.style.display = 'block';
+                    img.style.margin = '10px auto';
+                    const range = window.getSelection().getRangeAt(0);
+                    range.insertNode(img);
+                    range.collapse(false);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                };
+                reader.readAsDataURL(blob);
+                return;
+            }
+        }
+        // For text
+        const text = e.clipboardData.getData('Text');
+        document.execCommand('insertText', false, text);
+    }
+
+    // For create modal
+    document.getElementById('card-front').addEventListener('paste', handlePaste);
+    document.getElementById('card-back').addEventListener('paste', handlePaste);
+
+    // For edit modal
+    document.getElementById('edit-card-front').addEventListener('paste', handlePaste);
+    document.getElementById('edit-card-back').addEventListener('paste', handlePaste);
+
+    // After setting up paste listeners, add subscript shortcut
+    function setupSubscriptListeners() {
+        const editableAreas = [
+            document.getElementById('card-front'),
+            document.getElementById('card-back'),
+            document.getElementById('edit-card-front'),
+            document.getElementById('edit-card-back')
+        ];
+
+        editableAreas.forEach(area => {
+            area.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+                    e.preventDefault();
+                    document.execCommand('subscript', false, null);
+                }
+            });
+        });
+    }
+
+    // Call it after DOM loaded
+    setupSubscriptListeners();
+
+    // Add to setup function or after listeners
+    function setupImageHandlers() {
+        const editableAreas = [
+            document.getElementById('card-front'),
+            document.getElementById('card-back'),
+            document.getElementById('edit-card-front'),
+            document.getElementById('edit-card-back')
+        ];
+
+        editableAreas.forEach(area => {
+            area.addEventListener('click', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    if (confirm('Delete this image?')) {
+                        e.target.remove();
+                    }
+                }
+            });
+        });
+    }
+
+    setupImageHandlers();
+
+    function setupImageResize() {
+        const editableAreas = document.querySelectorAll('.editable-area');
+        
+        editableAreas.forEach(area => {
+            area.addEventListener('mouseover', (e) => {
+                if (e.target.tagName === 'IMG' && !e.target.dataset.resizeHandles) {
+                    addResizeHandles(e.target);
+                }
+            }, true);
+            
+            area.addEventListener('mouseout', (e) => {
+                if (e.target.tagName === 'IMG' && e.relatedTarget && !e.target.contains(e.relatedTarget)) {
+                    removeResizeHandles(e.target);
+                }
+            }, true);
+        });
+    }
+
+    function addResizeHandles(img) {
+        img.dataset.resizeHandles = 'true';
+        img.style.position = 'relative';
+        
+        const handles = ['nw', 'ne', 'sw', 'se'];
+        handles.forEach(dir => {
+            const handle = document.createElement('div');
+            handle.className = `resize-handle ${dir}`;
+            handle.addEventListener('mousedown', (e) => initResize(e, img, dir));
+            img.appendChild(handle);
+        });
+    }
+
+    function removeResizeHandles(img) {
+        const handles = img.querySelectorAll('.resize-handle');
+        handles.forEach(h => h.remove());
+        delete img.dataset.resizeHandles;
+        if (!img.style.width) img.style.position = '';
+    }
+
+    function initResize(e, img, dir) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = parseInt(document.defaultView.getComputedStyle(img).width, 10);
+        const startHeight = parseInt(document.defaultView.getComputedStyle(img).height, 10);
+        const aspectRatio = startWidth / startHeight;
+        
+        const onMouseMove = (e) => {
+            let newWidth, newHeight;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            switch (dir) {
+                case 'se':
+                    newWidth = startWidth + dx;
+                    newHeight = startHeight + dy;
+                    break;
+                case 'sw':
+                    newWidth = startWidth - dx;
+                    newHeight = startHeight + dy;
+                    break;
+                case 'ne':
+                    newWidth = startWidth + dx;
+                    newHeight = startHeight - dy;
+                    break;
+                case 'nw':
+                    newWidth = startWidth - dx;
+                    newHeight = startHeight - dy;
+                    break;
+            }
+            
+            // Maintain aspect ratio if shift not pressed, but for simplicity always maintain
+            if (newWidth > 50 && newHeight > 50) {
+                const newAspect = newWidth / newHeight;
+                if (Math.abs(newAspect - aspectRatio) > 0.01) {
+                    newHeight = newWidth / aspectRatio;
+                }
+                img.style.width = `${newWidth}px`;
+                img.style.height = `${newHeight}px`;
+            }
+        };
+        
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    setupImageResize();
+
+    // Image size toolbar utilities
+    let imageSizeToolbar = null;
+    let imageSizeToolbarFor = null;
+    let hideToolbarTimer = null;
+
+    function ensureImageSizeToolbar() {
+        if (imageSizeToolbar) return imageSizeToolbar;
+        const toolbar = document.createElement('div');
+        toolbar.className = 'image-size-toolbar hidden';
+        toolbar.innerHTML = `
+            <div class="img-size-controls">
+                <button class="size-btn" data-size="25">25%</button>
+                <button class="size-btn" data-size="50">50%</button>
+                <button class="size-btn" data-size="75">75%</button>
+                <button class="size-btn" data-size="100">100%</button>
+                <button class="size-btn" data-size="fit">Fit</button>
+                <input type="range" class="size-slider" min="10" max="200" step="5" value="100">
+                <span class="size-label">100%</span>
+            </div>
+        `;
+        document.body.appendChild(toolbar);
+
+        // Prevent interactions from bubbling into editor
+        toolbar.addEventListener('mousedown', (e) => e.stopPropagation());
+        toolbar.addEventListener('click', (e) => e.stopPropagation());
+        toolbar.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+
+        // Button handlers
+        toolbar.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!imageSizeToolbarFor) return;
+                const editable = imageSizeToolbarFor.closest('.editable-area');
+                if (!editable) return;
+                const areaWidth = editable.clientWidth || imageSizeToolbarFor.width || 1;
+                const target = btn.getAttribute('data-size');
+                let percent;
+                if (target === 'fit') {
+                    percent = 100;
+                } else {
+                    percent = parseInt(target, 10);
+                }
+                setImageWidthPercent(imageSizeToolbarFor, percent, areaWidth);
+                updateToolbarSlider(percent);
+                positionImageToolbar(imageSizeToolbarFor);
+            });
+        });
+
+        // Slider handler
+        const slider = toolbar.querySelector('.size-slider');
+        slider.addEventListener('input', () => {
+            if (!imageSizeToolbarFor) return;
+            const editable = imageSizeToolbarFor.closest('.editable-area');
+            if (!editable) return;
+            const areaWidth = editable.clientWidth || imageSizeToolbarFor.width || 1;
+            const percent = parseInt(slider.value, 10);
+            setImageWidthPercent(imageSizeToolbarFor, percent, areaWidth);
+            toolbar.querySelector('.size-label').textContent = `${percent}%`;
+            positionImageToolbar(imageSizeToolbarFor);
+        });
+
+        // Hover persistence
+        toolbar.addEventListener('mouseenter', () => {
+            if (hideToolbarTimer) {
+                clearTimeout(hideToolbarTimer);
+                hideToolbarTimer = null;
+            }
+        });
+        toolbar.addEventListener('mouseleave', () => {
+            queueHideImageToolbar();
+        });
+
+        imageSizeToolbar = toolbar;
+        return toolbar;
+    }
+
+    function updateToolbarSlider(percent) {
+        if (!imageSizeToolbar) return;
+        const slider = imageSizeToolbar.querySelector('.size-slider');
+        const label = imageSizeToolbar.querySelector('.size-label');
+        slider.value = String(Math.max(10, Math.min(200, Math.round(percent))));
+        label.textContent = `${slider.value}%`;
+    }
+
+    function setImageWidthPercent(img, percent, areaWidth) {
+        const widthPx = Math.max(20, Math.round(areaWidth * (percent / 100)));
+        const naturalRatio = img.naturalHeight ? (img.naturalWidth / img.naturalHeight) : null;
+        img.style.width = `${widthPx}px`;
+        if (naturalRatio) {
+            img.style.height = `${Math.round(widthPx / naturalRatio)}px`;
+        } else {
+            img.style.height = 'auto';
+        }
+    }
+
+    function computeImagePercent(img) {
+        const editable = img.closest('.editable-area');
+        if (!editable) return 100;
+        const areaWidth = editable.clientWidth || 1;
+        const currentWidth = parseInt(getComputedStyle(img).width, 10) || img.width || areaWidth;
+        return Math.round((currentWidth / areaWidth) * 100);
+    }
+
+    function positionImageToolbar(img) {
+        const toolbar = ensureImageSizeToolbar();
+        const rect = img.getBoundingClientRect();
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const top = rect.top + rect.height - 8; // just below image
+        const left = rect.left + (rect.width / 2) - (toolbarRect.width / 2);
+        toolbar.style.top = `${Math.max(8, Math.min(window.innerHeight - toolbarRect.height - 8, top))}px`;
+        toolbar.style.left = `${Math.max(8, Math.min(window.innerWidth - toolbarRect.width - 8, left))}px`;
+    }
+
+    function showImageToolbar(img) {
+        const toolbar = ensureImageSizeToolbar();
+        imageSizeToolbarFor = img;
+        const percent = computeImagePercent(img);
+        updateToolbarSlider(percent);
+        toolbar.classList.remove('hidden');
+        positionImageToolbar(img);
+    }
+
+    function hideImageToolbar() {
+        if (!imageSizeToolbar) return;
+        imageSizeToolbar.classList.add('hidden');
+        imageSizeToolbarFor = null;
+    }
+
+    function queueHideImageToolbar() {
+        if (hideToolbarTimer) clearTimeout(hideToolbarTimer);
+        hideToolbarTimer = setTimeout(() => {
+            hideToolbarTimer = null;
+            hideImageToolbar();
+        }, 150);
+    }
+
+    function setupImageSizeUI() {
+        const editableAreas = document.querySelectorAll('.editable-area');
+        editableAreas.forEach(area => {
+            area.addEventListener('mouseenter', (e) => {
+                const target = e.target;
+                if (target && target.tagName === 'IMG') {
+                    showImageToolbar(target);
+                }
+            }, true);
+            area.addEventListener('mouseleave', (e) => {
+                const target = e.target;
+                if (target && target.tagName === 'IMG') {
+                    queueHideImageToolbar();
+                }
+            }, true);
+            // Cmd/Ctrl + wheel to resize
+            area.addEventListener('wheel', (e) => {
+                if (!e.target || e.target.tagName !== 'IMG') return;
+                if (!(e.metaKey || e.ctrlKey)) return;
+                e.preventDefault();
+                const img = e.target;
+                const editable = img.closest('.editable-area');
+                if (!editable) return;
+                const areaWidth = editable.clientWidth || 1;
+                const current = computeImagePercent(img);
+                const delta = e.deltaY < 0 ? 5 : -5;
+                const next = Math.max(10, Math.min(200, current + delta));
+                setImageWidthPercent(img, next, areaWidth);
+                showImageToolbar(img);
+                updateToolbarSlider(next);
+                positionImageToolbar(img);
+            }, { passive: false });
+        });
+
+        // Reposition on scroll/resize if visible
+        window.addEventListener('scroll', () => {
+            if (imageSizeToolbarFor && imageSizeToolbar && !imageSizeToolbar.classList.contains('hidden')) {
+                positionImageToolbar(imageSizeToolbarFor);
+            }
+        }, true);
+        window.addEventListener('resize', () => {
+            if (imageSizeToolbarFor && imageSizeToolbar && !imageSizeToolbar.classList.contains('hidden')) {
+                positionImageToolbar(imageSizeToolbarFor);
+            }
+        });
+    }
+
+    setupImageSizeUI();
 
 
     // Initialize UI
