@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast('Error', 'Failed to resume session', 'error');
                 }
             } else {
-                startStudySession(deckName);
+            startStudySession(deckName);
             }
         } else if (button.classList.contains('study-hard-btn')) {
             const deckName = button.getAttribute('data-deck');
@@ -289,6 +289,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Add keyboard shortcuts for edit modal
+    document.getElementById('edit-card-modal').addEventListener('keydown', (e) => {
+        // Allow normal keyboard behavior in edit modal
+        if (e.key === ' ') {
+            // Don't prevent space in editable areas
+            const target = e.target;
+            if (target && (target.contentEditable === 'true' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                return; // Allow space in text inputs
+            }
+        }
+        
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            document.getElementById('edit-card-modal').classList.remove('active');
+        }
+        
+        // Ctrl/Cmd + Enter to save
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('save-edit').click();
+        }
+    });
+
     saveEditButton.addEventListener('click', () => {
         if (editingCardId) {
             const newFront = document.getElementById('edit-card-front').innerHTML.trim();
@@ -366,6 +389,20 @@ document.addEventListener('DOMContentLoaded', function() {
         resettingDeckName = deckName;
         resetDeckModal.classList.add('active');
     }
+
+    // Add keyboard shortcuts for reset modal
+    document.getElementById('reset-deck-modal').addEventListener('keydown', (e) => {
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            document.getElementById('reset-deck-modal').classList.remove('active');
+        }
+        
+        // Enter to confirm reset
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('confirm-reset').click();
+        }
+    });
 
     // Add economics example deck if it doesn't exist
     if (!decks['Economics 101']) {
@@ -824,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', (e) => {
             const difficulty = e.target.closest('button').getAttribute('data-difficulty');
             if (difficulty) {
-                processCardRating(difficulty);
+            processCardRating(difficulty);
             }
         });
     });
@@ -1191,6 +1228,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+        // Check if any modal is active - if so, don't process study shortcuts
+        const activeModal = document.querySelector('.modal.active');
+        if (activeModal) {
+            return; // Let modal handle its own keyboard events
+        }
+
         // Only process if we're in study mode
         if (!document.getElementById('study-overlay').classList.contains('active') ||
             document.getElementById('study-card-container').style.display === 'none') {
@@ -1522,10 +1565,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('remaining-count').textContent = totalCards - currentCardIndex;
         
         // Always show current card and let it handle completion logic
-        document.getElementById('study-card-container').style.display = 'block';
-        document.getElementById('deck-selection').style.display = 'none';
-        document.getElementById('session-complete').style.display = 'none';
-        showCurrentCard();
+            document.getElementById('study-card-container').style.display = 'block';
+            document.getElementById('deck-selection').style.display = 'none';
+            document.getElementById('session-complete').style.display = 'none';
+            showCurrentCard();
         
         return true;
     }
@@ -1599,6 +1642,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create/Edit deck modal handlers
     document.getElementById('close-create-deck-modal').addEventListener('click', () => {
         document.getElementById('create-deck-modal').classList.remove('active');
+    });
+
+    // Add keyboard shortcuts for create-deck modal
+    document.getElementById('create-deck-modal').addEventListener('keydown', (e) => {
+        // Allow normal keyboard behavior in editable areas
+        if (e.key === ' ') {
+            const target = e.target;
+            if (target && (target.contentEditable === 'true' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                return; // Allow space in text inputs
+            }
+        }
+        
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            document.getElementById('create-deck-modal').classList.remove('active');
+        }
     });
 
     // Add Cmd+Enter keybind for adding cards
@@ -1835,7 +1894,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let percent;
                 if (target === 'fit') {
                     percent = 100;
-                } else {
+        } else {
                     percent = parseInt(target, 10);
                 }
                 setImageWidthPercent(imageSizeToolbarFor, percent, areaWidth);

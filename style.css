@@ -1033,7 +1033,7 @@ body.study-mode .modal:not(#edit-card-modal) {
 .modal-footer {
     padding: 16px 24px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 12px;
 }
 
