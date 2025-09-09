@@ -504,6 +504,7 @@ button.sm {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
     min-height: 100%;
     flex: 1;
 }
@@ -512,7 +513,7 @@ button.sm {
 /* Inline flow container used for cloze front rendering only */
 .card-text-inline {
     display: block;
-    text-align: left;
+    text-align: center;
 }
 
 .card-content img {
