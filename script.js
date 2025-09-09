@@ -829,9 +829,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // But {{}} might be in text nodes
             // This might be complex; perhaps use a function to replace cloze in HTML
             // For now, assume cloze is text-only, or adjust
-            frontContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]</span>');
+            frontContent.innerHTML = `<div class="card-text-inline">${card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze">[...]<\/span>')}</div>`;
 
-            backContent.innerHTML = card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1</span>') +
+            backContent.innerHTML = `<div class="card-text-inline">${card.front.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-revealed">$1<\/span>')}</div>` +
                 (card.back ? `<hr style="margin: 1rem 0"><div>${card.back}</div>` : '');
         } else {
             frontContent.innerHTML = card.front;
